@@ -36,9 +36,9 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
     }
 
-    // Reglas para la colección de menús colaborativos
+    // Reglas para la colección de menús colaborativos/personales
     match /menus/{menuId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAuthenticated() && request.auth.uid == menuId;
     }
 
     // Reglas para la colección de ingredientes maestros

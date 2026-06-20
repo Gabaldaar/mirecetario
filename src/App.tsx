@@ -219,7 +219,7 @@ function App() {
       return;
     }
 
-    const docRef = doc(db, 'menus', 'collaborative');
+    const docRef = doc(db, 'menus', currentUser.uid);
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data() as CollaborativeMenu;
@@ -260,9 +260,9 @@ function App() {
     setOverrides(overridesToSave);
 
     try {
-      const docRef = doc(db, 'menus', 'collaborative');
+      const docRef = doc(db, 'menus', currentUser.uid);
       await setDoc(docRef, {
-        id: 'collaborative',
+        id: currentUser.uid,
         items: newItems,
         checkedIngredients: newChecked !== undefined ? newChecked : checkedIngredients,
         customIngredients: newCustom !== undefined ? newCustom : customIngredients,
