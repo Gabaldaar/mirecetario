@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg-app: #070b13;
+  --bg-card: rgba(15, 23, 42, 0.4);
+  --border-app: rgba(30, 41, 59, 0.8);
+  --border-light: rgba(51, 65, 85, 0.5);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --bg-input: #020617;
+  --bg-input-half: rgba(2, 6, 23, 0.4);
+  --teal-accent: #2dd4bf;
+  --purple-accent: #c084fc;
+  --rose-accent: #fb7185;
+  --diff-easy-text: #34d399;   /* emerald-400 */
+  --diff-medium-text: #fbbf24; /* amber-450 */
+  --diff-hard-text: #f87171;   /* rose-400 */
+}
+
+.theme-light {
+  --bg-app: #ffffff;          /* Pure white background to eliminate light gray */
+  --bg-card: #ffffff;         /* Pure white cards */
+  --border-app: #e2e8f0;      /* Soft border */
+  --border-light: #cbd5e1;
+  --text-primary: #0f172a;    /* Dark slate */
+  --text-secondary: #334155;  /* Darker slate-700 for text readability */
+  --bg-input: #ffffff;
+  --bg-input-half: #f8fafc;   /* Very soft off-white background (almost white, not gray) */
+  --teal-accent: #0f766e;     /* High-contrast dark teal for light mode */
+  --purple-accent: #6b21a8;   /* Much darker purple (purple-800) for maximum contrast */
+  --rose-accent: #be123c;     /* Darker rose for light mode */
+  --diff-easy-text: #047857;   /* Darker green (emerald-700) */
+  --diff-medium-text: #b45309; /* Darker orange (amber-700) */
+  --diff-hard-text: #b91c1c;   /* Darker red (rose-700) */
+}
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Outfit', 'Inter', system-ui, sans-serif;
+  --color-bg-app: var(--bg-app);
+  --color-bg-card: var(--bg-card);
+  --color-border-app: var(--border-app);
+  --color-border-light: var(--border-light);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-bg-input: var(--bg-input);
+  --color-bg-input-half: var(--bg-input-half);
+  --color-teal-accent: var(--teal-accent);
+  --color-purple-accent: var(--purple-accent);
+  --color-rose-accent: var(--rose-accent);
+  --color-diff-easy-text: var(--diff-easy-text);
+  --color-diff-medium-text: var(--diff-medium-text);
+  --color-diff-hard-text: var(--diff-hard-text);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Scrollbar premium para la estética visual */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
+}
+
+/* Reglas específicas para impresión a PDF o papel */
+@media print {
+  body, html {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+  
+  /* Habilitar la impresión de colores de fondo exactos si el usuario lo desea */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+

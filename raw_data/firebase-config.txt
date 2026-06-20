@@ -1,0 +1,6 @@
+apiKey: "AIzaSyDE2hNl8tME4MrJR2jzjPXEaklUQ_shCQ8",
+  authDomain: "mirecetario-1a58d.firebaseapp.com",
+  projectId: "mirecetario-1a58d",
+  storageBucket: "mirecetario-1a58d.firebasestorage.app",
+  messagingSenderId: "174183238596",
+  appId: "1:174183238596:web:1fdfe149a4f2c0f0033291"

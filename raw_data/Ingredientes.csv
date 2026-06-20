@@ -1,0 +1,506 @@
+"IDIngrediente";"Ingrediente";"IDCategIng"
+1;"Sal";6
+2;"Pimienta Negra";6
+3;"Aceite";11
+4;"Aceite de Oliva";11
+5;"Ají molido";6
+6;"Alcohol fino";12
+7;"Harina 000";25
+8;"Harina leudante";25
+9;"Harina 0000";25
+10;"Huevos";4
+11;"Manteca";4
+12;"Agua";13
+13;"Clara de huevo";4
+14;"Yemas";4
+15;"Fécula de maiz";25
+16;"Manzanas verdes";3
+17;"Semillas de sésamo";6
+18;"Azúcar";24
+19;"Amarettis";9
+20;"Ron";12
+21;"Leche entera";4
+22;"Ralladura de limón";3
+23;"Queso Gouda";4
+24;"Mostaza en granos";10
+25;"Ajo";3
+26;"Salsa de chile";10
+27;"Lomo";2
+28;"Limón";3
+29;"Queso Parmesano";4
+30;"Rúcula";3
+31;"Diente de León";3
+32;"Lechuga";3
+33;"Perifollo";3
+34;"Avena arrollada";5
+35;"Crema de leche";4
+36;"Miel de caña";26
+37;"Margarina";4
+38;"Miel";26
+39;"Esencia de limón";20
+40;"Champagne";12
+41;"Duraznos en almíbar";7
+42;"Jerez";12
+43;"Canela";6
+44;"Arroz blanco";5
+45;"Vinagre de alcohol";11
+46;"Mirin";12
+47;"Colorante rojo, vegetal";22
+48;"Jengibre";3
+49;"Alga Nori";14
+50;"Pepino";3
+51;"Wasabi";14
+52;"Trucha";23
+53;"Almendras";21
+54;"Queso crema";4
+55;"Levadura de cerveza fresca";4
+56;"Esencia de vainilla";20
+57;"Aceite de maíz";11
+58;"Grasa de pella";2
+60;"Masa para pizza";5
+61;"Tomate";3
+62;"Orégano";3
+63;"Mozzarella";4
+64;"Lavanda";6
+65;"Cacao amargo";22
+66;"Peras en almíbar";7
+67;"Nuez moscada";6
+68;"Helado  de Vainilla";28
+69;"Cacao";22
+70;"Naranjas";3
+71;"Ralladura de naranja";3
+72;"Chocolate cobertura blanco";22
+73;"Grand-Marnier";12
+74;"Gelatina sin sabor";29
+75;"Edulcorante";24
+77;"Yogur natural";4
+78;"Menta fresca";3
+79;"Azúcar moreno";24
+80;"Vainilla";9
+81;"Orégano desecado";6
+82;"Sémola";5
+83;"Extracto de malta";29
+84;"Albahaca fresca";3
+85;"Queso Mascarpone";4
+87;"Crema Moka";14
+88;"Café";27
+89;"Pan francés";8
+90;"Marsala";12
+91;"Azúcar impalpable";24
+92;"Café instantáneo";27
+93;"Tomate seco";21
+94;"Vino Blanco";12
+95;"Vinagre de jerez";11
+96;"Pimienta rosada";6
+97;"Pechuga de pollo";2
+98;"Rabanito";3
+99;"Cebolla";3
+100;"Aceitunas descarozadas";18
+101;"Sal gruesa";6
+102;"Cerezas al marrasquino";7
+103;"Whisky";12
+104;"Helado de crema americana";28
+105;"Leche condensada";7
+106;"Glicerina";31
+107;"Perejil";3
+108;"Pimentón";6
+109;"Pimienta blanca";6
+110;"Papas";3
+111;"Queso quartirolo";4
+112;"Pollo";2
+113;"Pan rallado";8
+115;"Puerros";3
+116;"Jamón cocido";19
+117;"Salsa de soja";10
+118;"Aceite de soja";11
+119;"Glutamato monosódico";31
+120;"Huevos de codorniz";4
+121;"Berro";3
+122;"Salsa remoulade";10
+123;"Alcaparras";18
+124;"Pepinitos en vinagre";18
+125;"Mayonesa";10
+126;"Corvina";23
+127;"Caldo de pescado";30
+128;"Cognac";12
+129;"Cointreau";12
+130;"Frutillas";3
+131;"Rosas";14
+132;"Granadina";13
+133;"Champignones";3
+134;"Bouquet Garni";6
+136;"Tapa de asado";2
+137;"Nitrato de sodio";31
+138;"Pan lactal";8
+139;"Bicarbonato de sodio";31
+140;"Cerveza";12
+141;"Palta";3
+142;"Salsa Tabasco";10
+143;"Espinaca";3
+144;"Aceituna negra";18
+145;"Vinagre de vino";11
+146;"Piñones";21
+147;"Jamón crudo";19
+148;"Queso Gruyere";4
+150;"Salsa Inglesa";10
+151;"Apio";3
+152;"Morrones verdes";3
+153;"Zanahoria";3
+154;"Repollo blanco";3
+155;"Cardo";3
+156;"Coliflor";3
+157;"Anchoas";14
+158;"Queso Emmenthal";4
+159;"Kirsh";12
+160;"Ricota";4
+161;"Riñones";2
+162;"Queso rallado";4
+163;"Morrones rojos";3
+164;"Coco rallado";22
+165;"Pulpo";23
+166;"Laurel";6
+167;"Tomates Cherry";3
+168;"Carne picada";2
+169;"Cebolla de verdeo";3
+170;"Comino";6
+171;"Pasas de uva";21
+172;"Maiz blanco";3
+173;"Porotos";3
+174;"Mondongo";2
+175;"Orejas de cerdo";2
+176;"Chorizo colorado";19
+177;"Salchicha criolla";19
+178;"Zapallo";3
+179;"Caldo de pollo";30
+180;"Azafrán";6
+181;"Panceta";19
+182;"Mejillones";23
+183;"Calamares";23
+184;"Arvejas";7
+185;"Langostinos";23
+186;"Tomate en conserva";7
+188;"Cáscara de naranja";3
+190;"Chocolate para taza";22
+191;"Nueces";21
+192;"Sal marina";6
+193;"Té de jazmín";27
+194;"Cáscara de limón";3
+196;"Oporto";12
+197;"Almíbar";14
+198;"Chocolate cobertura";22
+199;"Avellanas";21
+200;"Granas de chocolate";22
+201;"Aceitunas verdes";18
+202;"Lomo de cerdo";2
+203;"Bifes de ternera";2
+204;"Cebollín";3
+205;"Caramelo";22
+207;"Clavo de olor";6
+208;"Puré de manzanas";7
+209;"Costilla de cerdo";2
+210;"Carne vacuna picada";2
+211;"Carne de cerdo picada";2
+212;"Aceite de maní";11
+213;"Aceite de Sésamo";11
+214;"Atún";7
+215;"Ketchup";10
+216;"Camarones pelados";23
+217;"Mermelada de ciruelas";26
+219;"Puré de tomates";7
+220;"Chile";3
+221;"Cinco Especias";6
+222;"Tallarines";5
+223;"Tapas para empanadas";5
+224;"Tomillo";6
+225;"Queso Feta";4
+226;"Kinotos";3
+227;"Carne vacuna";2
+228;"Hongos secos";21
+229;"Extracto de tomate";7
+230;"Caldo de carne";30
+231;"Caldo de verduras";30
+232;"Caracú";2
+233;"Sesos";2
+234;"Echalotes";3
+235;"Estragón";6
+237;"Escalopes";2
+238;"Finas hierbas";6
+239;"Mermelada de duraznos";26
+240;"Mermelada de frutillas";26
+241;"Helado de chocolate";28
+242;"Salsa de caramelo";22
+243;"Curacao";12
+244;"Patas de pollo";2
+245;"Damascos secos";21
+246;"Pasas de ciruela";21
+248;"Aceto balsámico";11
+249;"Salmón ahumado";19
+250;"Trucha ahumada";19
+251;"Lima";3
+252;"Helado de limón";28
+253;"Peceto";2
+254;"Vino tinto";12
+255;"Panceta ahumada";19
+256;"Queso provolone";4
+257;"Espaguetis";5
+258;"Filet de pescado";23
+259;"Leche en polvo";7
+260;"Eneldo";6
+261;"Cúrcuma";6
+262;"Cilantro";6
+263;"Bife angosto";2
+264;"Pimienta de cayena";6
+265;"Mango";3
+266;"Mollejas";2
+267;"Carne de cordero";2
+268;"Romero";6
+269;"Berenjena";3
+270;"Zucchini";3
+271;"Choclo";3
+272;"Choclo enano";3
+273;"Coriandro";6
+274;"Queso cottage";4
+275;"Pan de viena";8
+276;"Pisco";12
+277;"Vino rosado";12
+278;"Damascos";3
+279;"Azúcar en terrones";24
+280;"Agua con gas";13
+281;"Hielo";14
+282;"Queso Chedar";4
+283;"Queso Fresco";4
+284;"Triple Sec";12
+285;"Kiwi";3
+286;"Polvo de hornear";25
+287;"Chocolate";22
+288;"Paleta";19
+289;"Lentejas";5
+291;"Pulpitos";23
+292;"Grasa de cerdo";2
+293;"Queso Roquefort";4
+294;"Hinojo";3
+295;"Lenguado";23
+296;"Merluza";23
+297;"Cerezas";3
+298;"Aguardiente";12
+299;"Sandía";3
+300;"Agua de Azahar";20
+301;"Macarrones";5
+302;"Fruta abrillantada";21
+303;"Melaza";29
+304;"Melón";3
+305;"Espárragos";3
+306;"Endibias";3
+307;"Pimienta verde";6
+308;"Arenque";23
+309;"Remolacha";3
+312;"Pato";2
+313;"Repollitos de Bruselas";3
+314;"Ginebra";12
+315;"Duraznos";3
+316;"Arroz Basmati";5
+318;"Leche de coco";7
+319;"Castañas de Cajú";21
+320;"Mostaza";10
+321;"Curry";6
+322;"Galletitas de chocolate";9
+323;"Crema Chantilly";4
+324;"Queso blando";4
+325;"Pejerrey";23
+326;"Vermouth";12
+327;"Salmón fresco";23
+328;"Carré de cerdo";2
+329;"Salchicha";19
+330;"Salvia";6
+331;"Vacío";2
+332;"Pavo";2
+333;"Conejo";2
+334;"Paté";7
+335;"Cebolla morada";3
+336;"Vinagre de manzana";11
+337;"Semillas de cebolla";6
+338;"Helado de nueces";28
+339;"Amaretto";12
+340;"Pan de campo";8
+341;"Vainillina";20
+342;"Bananas";3
+343;"Kumel";6
+344;"Ananá";3
+345;"Frambuesas";3
+346;"Masa de Pionono";22
+347;"Licor de frambuesa";12
+348;"Sidra";12
+349;"Mermelada de naranja";26
+350;"Semillas de amapola";6
+351;"Panqueques";14
+352;"Mostaza de Dijon";10
+353;"Acelga";3
+354;"Salsa blanca";14
+355;"Porotos colorados";3
+356;"Salsa de tomate";7
+357;"Tortillas de maíz";14
+358;"Salsa para Tacos";10
+359;"Tortillas";14
+360;"Harina de maíz";25
+361;"Cremor tártaro";22
+362;"Queso fontina";4
+363;"Dulce de leche";26
+364;"Lengüitas de gato";9
+365;"Manzanas rojas";3
+366;"Uvas verdes";3
+367;"Dátiles";21
+368;"Higos";3
+369;"Pickles";18
+370;"Castañas";21
+371;"Esencia de rosas";20
+372;"Anís";6
+373;"Codorniz";2
+375;"Masa de tarta";5
+376;"Jalea de membrillo";26
+377;"Uvas negras";3
+378;"Pan de centeno";8
+379;"Ghee";14
+380;"Crema agria";4
+381;"Harina integral de trigo";25
+382;"Maníes";21
+383;"Glucosa";24
+384;"Pistachos";21
+385;"Cerdo";2
+386;"Tinta de calamar";7
+387;"Miel de maíz";26
+389;"Helado de frutilla";28
+390;"Helado de Pistacho";28
+391;"Merengues";22
+392;"Batatas";3
+393;"Grasa vacuna";2
+394;"Fécula de papa";25
+395;"Pescado de carne blanca";23
+396;"Calvados";12
+397;"Salsa Tai de pescado";10
+398;"Yogur de durazno";4
+399;"Marrasquino";12
+400;"Mermelada de damascos";26
+401;"Zapallito";3
+402;"Postre de vainilla";29
+403;"Lentejas de chocolate";22
+404;"Cardamomo";6
+405;"Gelatina de limón";29
+406;"Fideos";5
+407;"Fideos secos";5
+408;"Vinagre de vino blanco";11
+409;"Chaucha";3
+410;"Brotes de bambú";3
+411;"Paté de salmón ahumado";7
+412;"Tomate perita";3
+413;"Moscatel";12
+414;"Escarola";3
+415;"Radicchio";3
+416;"Licor de Cassis";12
+417;"Pennes";5
+418;"Licor de Menta";12
+419;"Almejas";23
+420;"Salsa de pescado";30
+421;"Copos de maíz";9
+422;"Yogur de Vainilla";4
+423;"Colorante AZUL";22
+424;"Tequila";12
+425;"Peras";3
+426;"Mermelada de frambuesas";26
+427;"Costillas de cordero";2
+429;"Fideos cabello de ángel";5
+430;"Lomo de cordero";2
+431;"Pan Pita";8
+432;"Tabule";7
+433;"Humus";7
+434;"Garbanzos";3
+435;"Masa Filo";5
+436;"Tofu";4
+437;"Vinagre de arroz";11
+438;"Pechito de cerdo";2
+439;"Repollo colorado";3
+440;"Nabos";3
+441;"Trigo Bulghur";25
+442;"Harina de arroz";25
+443;"Vinagre de sidra";11
+444;"Sopa de espárragos";30
+445;"Maíz pizingallo";3
+446;"Crustáceos";23
+447;"Moluscos";23
+448;"Crema de moka";22
+449;"Brotes de soja";3
+450;"Extracto de carne";31
+451;"Palmitos";7
+452;"Helado de frambuesa";28
+453;"Higos secos";21
+454;"Gelatina de frutilla";29
+455;"Alga Wakame";14
+456;"Huevas de Salmón";23
+457;"Sake";12
+458;"Bok Choy";3
+459;"Fideos de arroz";5
+460;"Fideos Soba";5
+461;"Hakusay";3
+462;"Shitake";14
+463;"Vieiras";23
+464;"Ensalada de frutas en almíbar";7
+465;"Pomelos";3
+466;"Vino Garnacha";12
+467;"Queso Cuartirolo";4
+468;"Salamín";19
+469;"Tapa de tarta";5
+470;"Colita de cuadril";2
+471;"Brócoli";3
+472;"Anchoítas";23
+473;"Matambre";2
+474;"Verduras para sopa";3
+475;"Jamón Serrano";19
+476;"Chutney";10
+477;"Pan para panchos";8
+478;"Riñones de ternera";2
+479;"Extracto de almendras";20
+480;"Alas de pollo";2
+481;"Armagnac";12
+482;"Gallina";2
+483;"Brandy";12
+484;"Queso fundido";4
+485;"Pecho de ternera";2
+486;"Esencia de naranja";20
+487;"Harina de malta";25
+488;"Salvado";25
+489;"Levadura seca";4
+490;"Galletitas de vainilla";9
+491;"Mejorana";6
+492;"Enebro";6
+493;"Trigo";25
+494;"Codillo de cerdo";2
+495;"Té";27
+496;"Pimienta de Jamaica";6
+497;"Jarabe de Goma";24
+498;"Té Negro";27
+499;"Frutos rojos";3
+500;"Almidón de maíz";25
+501;"Salsa Worcestershire";10
+502;"Plátano";3
+503;"Mandarina";3
+504;"Papines";3
+505;"Queso Brie";4
+506;"Habas";3
+507;"Chorizo";2
+508;"Ají picante";3
+509;"Morcillas";2
+510;"Azotillo";2
+512;"Choricito";2
+513;"Aceite de girasol";11
+514;"Jamón de cerdo";2
+515;"Hierbas aromáticas";6
+516;"Azúcar rubia";24
+517;"Chicharrones";2
+518;"Osobuco";2
+519;"Solomillo de cerdo";2
+520;"Cáscara de sandía";3
+521;"Hígado";2
+522;"Calabacín";14
+523;"Molde de papel";1
+524;"Morrón Amarillo";3
+525;"Leche evaporada";4
+526;"Galletita de agua";9
