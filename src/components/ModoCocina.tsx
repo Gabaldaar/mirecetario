@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useVoiceNavigation } from '../hooks/useVoiceNavigation';
 import type { Recipe } from '../types';
 import { X, Mic, MicOff, Volume2, ArrowLeft, ArrowRight, Play, Pause, RotateCcw, Clock } from 'lucide-react';
@@ -54,6 +54,46 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
     }
   };
 
+  const numberMap: Record<string, number> = {
+    un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
+    seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11,
+    doce: 12, trece: 13, catorce: 14, quince: 15, veinte: 20,
+    treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60
+  };
+
+  const parseSpokenTimeToSeconds = (text: string): number | null => {
+    const t = text.toLowerCase().trim();
+    if (t.includes("media hora")) {
+      return 1800;
+    }
+    if (t.includes("hora y media")) {
+      return 5400;
+    }
+    if (t.includes("cancelar") || t.includes("ninguno") || t.includes("no")) {
+      return null;
+    }
+
+    const regex = /(?:(\d+)|(un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|veinte|treinta|cuarenta|cincuenta|sesenta))\s*(minuto|minutos|min|hora|horas|segundo|segundos|seg)/i;
+    const match = regex.exec(t);
+    if (match) {
+      let quantity = 0;
+      if (match[1]) {
+        quantity = parseInt(match[1]);
+      } else if (match[2]) {
+        quantity = numberMap[match[2].toLowerCase()] || 0;
+      }
+      const unit = match[3].toLowerCase();
+      if (unit.startsWith('min')) {
+        return quantity * 60;
+      } else if (unit.startsWith('hor')) {
+        return quantity * 3600;
+      } else if (unit.startsWith('seg')) {
+        return quantity;
+      }
+    }
+    return null;
+  };
+
   // Scan text and start timer callback for voice commands
   const handleStartTimerVoice = () => {
     if (timerDuration !== null) {
@@ -76,6 +116,40 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
         seconds = quantity;
       }
       startCustomTimer(seconds, match[0]);
+    } else {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance("¿Para cuánto tiempo quieres el temporizador?");
+        utterance.lang = 'es-ES';
+        window.speechSynthesis.speak(utterance);
+      }
+      setIsWaitingForTimerDuration(true);
+    }
+  };
+
+  const handleTextReceived = (text: string) => {
+    if (isWaitingRef.current) {
+      if (text.includes("cancelar") || text.includes("no")) {
+        setIsWaitingForTimerDuration(false);
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance("Entendido, temporizador cancelado.");
+          utterance.lang = 'es-ES';
+          window.speechSynthesis.speak(utterance);
+        }
+        return;
+      }
+      const seconds = parseSpokenTimeToSeconds(text);
+      if (seconds !== null) {
+        startCustomTimer(seconds, text);
+        setIsWaitingForTimerDuration(false);
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(`Iniciando temporizador de ${text}`);
+          utterance.lang = 'es-ES';
+          window.speechSynthesis.speak(utterance);
+        }
+      }
     }
   };
 
@@ -83,7 +157,8 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
     handleNext,
     handleBack,
     speakStep,
-    handleStartTimerVoice
+    handleStartTimerVoice,
+    handleTextReceived
   );
 
   // Detener TTS si salimos del paso o cerramos el modo cocina
@@ -100,6 +175,12 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
   const [timerRemaining, setTimerRemaining] = useState<number>(0);
   const [timerActive, setTimerActive] = useState(false);
   const [timerLabel, setTimerLabel] = useState('');
+  const [isWaitingForTimerDuration, setIsWaitingForTimerDuration] = useState(false);
+  const isWaitingRef = useRef(false);
+
+  useEffect(() => {
+    isWaitingRef.current = isWaitingForTimerDuration;
+  }, [isWaitingForTimerDuration]);
 
   useEffect(() => {
     let interval: any = null;
@@ -265,25 +346,92 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
       </div>
 
       {/* Main step container */}
-      <div className="flex-1 flex flex-col justify-center max-w-4xl mx-auto my-6 md:my-10 w-full">
-        {steps.length === 0 ? (
-          <div className="text-center text-slate-500">
-            No se detectaron pasos de preparación estructurados.
-            <div className="mt-4 text-slate-300 text-left bg-slate-900/40 p-6 rounded-2xl">
-              {recipe.preparation}
+      <div className="flex-1 flex flex-col md:flex-row items-stretch justify-center gap-6 md:gap-10 max-w-5xl mx-auto my-6 md:my-10 w-full">
+        {/* Step Text Column */}
+        <div className="flex-1 flex flex-col justify-center min-w-0">
+          {steps.length === 0 ? (
+            <div className="text-center text-slate-500">
+              No se detectaron pasos de preparación estructurados.
+              <div className="mt-4 text-slate-300 text-left bg-slate-900/40 p-6 rounded-2xl">
+                {recipe.preparation}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-full text-sm font-bold">
-                Paso {currentStepIndex + 1} de {steps.length}
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 animate-fade-in">
+                <span className="px-3 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-full text-sm font-bold">
+                  Paso {currentStepIndex + 1} de {steps.length}
+                </span>
+                {isWaitingForTimerDuration && (
+                  <span className="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-semibold animate-pulse flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    ¿Para cuánto tiempo quieres el temporizador? (ej: "3 minutos")
+                  </span>
+                )}
+              </div>
+
+              {/* Texto del Paso con fuentes gigantes */}
+              <div className="text-2xl md:text-4xl lg:text-5xl font-light text-slate-100 leading-snug md:leading-normal">
+                {renderStepWithTimers(steps[currentStepIndex])}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Timer Column (if active, side-by-side) */}
+        {timerDuration !== null && (
+          <div className="w-full md:w-80 bg-slate-900/40 border border-slate-800/80 shadow-2xl p-6 rounded-2xl flex flex-col justify-center gap-4 self-center backdrop-blur-md transition-all duration-350">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-teal-400" />
+                Temporizador {timerLabel && `(${timerLabel})`}
               </span>
+              <button
+                onClick={() => setTimerDuration(null)}
+                className="text-slate-500 hover:text-slate-300 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Texto del Paso con fuentes gigantes */}
-            <div className="text-2xl md:text-4xl lg:text-5xl font-light text-slate-100 leading-snug md:leading-normal">
-              {renderStepWithTimers(steps[currentStepIndex])}
+            <div className="flex flex-col items-center">
+              <div className="text-5xl font-extrabold text-teal-400 font-mono py-1 tracking-tight">
+                {formatTimerTime(timerRemaining)}
+              </div>
+              <div className="text-xs text-slate-500 font-mono mt-1">
+                Transcurrido: {formatTimerTime(timerDuration - timerRemaining)} / {formatTimerTime(timerDuration)}
+              </div>
+            </div>
+
+            {/* Barra de progreso */}
+            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-teal-500 to-cyan-400 h-full transition-all duration-1000"
+                style={{ width: `${(timerRemaining / timerDuration) * 100}%` }}
+              ></div>
+            </div>
+
+            <div className="flex justify-center gap-2 mt-2">
+              <button
+                onClick={() => setTimerActive(prev => !prev)}
+                className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+                  timerActive 
+                    ? 'bg-slate-850 text-amber-400 hover:bg-slate-800' 
+                    : 'bg-teal-500/10 text-teal-400 hover:bg-teal-500/20'
+                }`}
+              >
+                {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {timerActive ? 'Pausar' : 'Iniciar'}
+              </button>
+              <button
+                onClick={() => {
+                  setTimerRemaining(timerDuration);
+                  setTimerActive(false);
+                }}
+                className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 text-slate-400 hover:bg-slate-750 transition cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" /> Reiniciar
+              </button>
             </div>
           </div>
         )}
@@ -345,58 +493,7 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
         </div>
       </div>
 
-      {/* Floating Timer Widget */}
-      {timerDuration !== null && (
-        <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-50 bg-slate-900 border border-slate-700/60 shadow-2xl p-4 rounded-2xl w-72 flex flex-col gap-3 backdrop-blur-md">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-teal-400" />
-              Temporizador {timerLabel && `(${timerLabel})`}
-            </span>
-            <button
-              onClick={() => setTimerDuration(null)}
-              className="text-slate-500 hover:text-slate-300 transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
 
-          <div className="text-4xl font-extrabold text-center text-teal-400 font-mono py-1">
-            {formatTimerTime(timerRemaining)}
-          </div>
-
-          {/* Barra de progreso interna del timer */}
-          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div
-              className="bg-teal-400 h-full transition-all duration-1000"
-              style={{ width: `${(timerRemaining / timerDuration) * 100}%` }}
-            ></div>
-          </div>
-
-          <div className="flex justify-center gap-2 mt-1">
-            <button
-              onClick={() => setTimerActive(prev => !prev)}
-              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition ${
-                timerActive 
-                  ? 'bg-slate-800 text-amber-400 hover:bg-slate-750' 
-                  : 'bg-teal-500/10 text-teal-400 hover:bg-teal-500/20'
-              }`}
-            >
-              {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {timerActive ? 'Pausar' : 'Iniciar'}
-            </button>
-            <button
-              onClick={() => {
-                setTimerRemaining(timerDuration);
-                setTimerActive(false);
-              }}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-400 hover:bg-slate-750 transition"
-            >
-              <RotateCcw className="w-4 h-4" /> Reiniciar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

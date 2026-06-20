@@ -4,18 +4,19 @@ export const useVoiceNavigation = (
   onNext: () => void,
   onBack: () => void,
   onSpeak?: () => void,
-  onStartTimer?: () => void
+  onStartTimer?: () => void,
+  onTextReceived?: (text: string) => void
 ) => {
   const [isListening, setIsListening] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
   const recognitionRef = useRef<any>(null);
   
   // Use refs for callbacks to avoid stale closures in the single SpeechRecognition instance
-  const callbacksRef = useRef({ onNext, onBack, onSpeak, onStartTimer });
+  const callbacksRef = useRef({ onNext, onBack, onSpeak, onStartTimer, onTextReceived });
   
   useEffect(() => {
-    callbacksRef.current = { onNext, onBack, onSpeak, onStartTimer };
-  }, [onNext, onBack, onSpeak, onStartTimer]);
+    callbacksRef.current = { onNext, onBack, onSpeak, onStartTimer, onTextReceived };
+  }, [onNext, onBack, onSpeak, onStartTimer, onTextReceived]);
 
   const isListeningRef = useRef(false);
 
@@ -36,6 +37,10 @@ export const useVoiceNavigation = (
       const command = event.results[lastIndex][0].transcript.trim().toLowerCase();
       setRecognizedText(command);
       console.log("Comando escuchado:", command);
+
+      if (callbacksRef.current.onTextReceived) {
+        callbacksRef.current.onTextReceived(command);
+      }
 
       const avanzarWords = ["siguiente", "avanzar", "adelante", "dale", "próximo", "proximo"];
       const retrocederWords = ["anterior", "atrás", "atras", "retroceder", "volver"];
