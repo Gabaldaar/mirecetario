@@ -42,8 +42,6 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
     setCurrentStepIndex(prev => (prev > 0 ? prev - 1 : prev));
   };
 
-  const { isListening, toggleListening, recognizedText } = useVoiceNavigation(handleNext, handleBack);
-
   // TTS: Síntesis de voz para leer los pasos en voz alta
   const speakStep = () => {
     if ('speechSynthesis' in window) {
@@ -55,6 +53,38 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
       window.speechSynthesis.speak(utterance);
     }
   };
+
+  // Scan text and start timer callback for voice commands
+  const handleStartTimerVoice = () => {
+    if (timerDuration !== null) {
+      setTimerActive(true);
+      return;
+    }
+    const text = steps[currentStepIndex];
+    if (!text) return;
+    const regex = /\b(\d+)\s*(min|minutos|hs|horas|seg|segundos)\b/gi;
+    const match = regex.exec(text);
+    if (match) {
+      const quantity = parseInt(match[1]);
+      const unit = match[2].toLowerCase();
+      let seconds = 0;
+      if (unit.startsWith('min')) {
+        seconds = quantity * 60;
+      } else if (unit.startsWith('h')) {
+        seconds = quantity * 3600;
+      } else if (unit.startsWith('s')) {
+        seconds = quantity;
+      }
+      startCustomTimer(seconds, match[0]);
+    }
+  };
+
+  const { isListening, toggleListening, recognizedText } = useVoiceNavigation(
+    handleNext,
+    handleBack,
+    speakStep,
+    handleStartTimerVoice
+  );
 
   // Detener TTS si salimos del paso o cerramos el modo cocina
   useEffect(() => {

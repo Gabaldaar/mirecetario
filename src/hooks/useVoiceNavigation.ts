@@ -1,9 +1,23 @@
 import { useEffect, useState, useRef } from 'react';
 
-export const useVoiceNavigation = (onNext: () => void, onBack: () => void) => {
+export const useVoiceNavigation = (
+  onNext: () => void,
+  onBack: () => void,
+  onSpeak?: () => void,
+  onStartTimer?: () => void
+) => {
   const [isListening, setIsListening] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
   const recognitionRef = useRef<any>(null);
+  
+  // Use refs for callbacks to avoid stale closures in the single SpeechRecognition instance
+  const callbacksRef = useRef({ onNext, onBack, onSpeak, onStartTimer });
+  
+  useEffect(() => {
+    callbacksRef.current = { onNext, onBack, onSpeak, onStartTimer };
+  }, [onNext, onBack, onSpeak, onStartTimer]);
+
+  const isListeningRef = useRef(false);
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -23,21 +37,27 @@ export const useVoiceNavigation = (onNext: () => void, onBack: () => void) => {
       setRecognizedText(command);
       console.log("Comando escuchado:", command);
 
-      if (
-        command.includes("siguiente") || 
-        command.includes("avanza") || 
-        command.includes("adelante") || 
-        command.includes("próximo") ||
-        command.includes("proximo")
-      ) {
-        onNext();
-      } else if (
-        command.includes("atrás") || 
-        command.includes("atras") || 
-        command.includes("anterior") || 
-        command.includes("retrocede")
-      ) {
-        onBack();
+      const avanzarWords = ["siguiente", "avanzar", "adelante", "dale", "próximo", "proximo"];
+      const retrocederWords = ["anterior", "atrás", "atras", "retroceder", "volver"];
+      const repetirWords = ["repetir", "leer", "cómo", "como", "otra vez", "escuchar"];
+      const temporizadorWords = ["iniciar", "temporizador", "tiempo", "cronómetro", "cronometro", "comenzar"];
+
+      const matchesAny = (wordsList: string[]) => {
+        return wordsList.some(word => command.includes(word));
+      };
+
+      if (matchesAny(avanzarWords)) {
+        callbacksRef.current.onNext();
+      } else if (matchesAny(retrocederWords)) {
+        callbacksRef.current.onBack();
+      } else if (matchesAny(repetirWords)) {
+        if (callbacksRef.current.onSpeak) {
+          callbacksRef.current.onSpeak();
+        }
+      } else if (matchesAny(temporizadorWords)) {
+        if (callbacksRef.current.onStartTimer) {
+          callbacksRef.current.onStartTimer();
+        }
       }
     };
 
@@ -45,14 +65,15 @@ export const useVoiceNavigation = (onNext: () => void, onBack: () => void) => {
       console.error("Speech recognition error:", event.error);
       if (event.error === 'not-allowed') {
         setIsListening(false);
+        isListeningRef.current = false;
       }
     };
 
     recognition.onend = () => {
-      // Si el usuario quería escuchar de forma continua, reiniciamos el reconocimiento
-      if (isListening && recognitionRef.current) {
+      // If the user wants continuous listening, we restart
+      if (isListeningRef.current) {
         try {
-          recognitionRef.current.start();
+          recognition.start();
         } catch (e) {
           console.error("Failed to restart speech recognition:", e);
         }
@@ -62,25 +83,30 @@ export const useVoiceNavigation = (onNext: () => void, onBack: () => void) => {
     recognitionRef.current = recognition;
 
     return () => {
+      isListeningRef.current = false;
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     };
-  }, [onNext, onBack, isListening]);
+  }, []); // Run only once to instantiate speech recognition
 
   const toggleListening = () => {
     if (isListening) {
       setIsListening(false);
+      isListeningRef.current = false;
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     } else {
       setIsListening(true);
+      isListeningRef.current = true;
       if (recognitionRef.current) {
         try {
           recognitionRef.current.start();
         } catch (e) {
           console.error("Failed to start speech recognition:", e);
+          setIsListening(false);
+          isListeningRef.current = false;
         }
       }
     }
@@ -88,4 +114,5 @@ export const useVoiceNavigation = (onNext: () => void, onBack: () => void) => {
 
   return { isListening, toggleListening, recognizedText };
 };
+
 export default useVoiceNavigation;
