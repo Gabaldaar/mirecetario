@@ -44,18 +44,23 @@ export const useVoiceNavigation = (
         callbacksRef.current.onTextReceived(command);
       }
 
-      const avanzarWords = ["siguiente", "avanzar", "adelante", "dale", "próximo", "proximo"];
-      const retrocederWords = ["anterior", "atrás", "atras", "retroceder", "volver"];
-      const repetirWords = ["repetir", "leer", "cómo", "como", "otra vez", "escuchar"];
-      const temporizadorWords = ["iniciar", "temporizador", "tiempo", "cronómetro", "cronometro", "comenzar"];
-      const pausarWords = ["pausar", "pausa", "detener", "detén", "deten", "parar", "para", "espera"];
+      const avanzarWords = ["siguiente", "avanzar", "adelante", "dale", "proximo"];
+      const retrocederWords = ["anterior", "atras", "retroceder", "volver"];
+      const repetirWords = ["repetir", "leer", "como", "escuchar"];
+      const temporizadorWords = ["iniciar", "temporizador", "tiempo", "cronometro", "comenzar"];
+      const pausarWords = ["pausar", "pausa", "detener", "deten", "parar", "para", "espera"];
       const cancelarWords = ["quitar", "quita", "cancelar", "cancela", "apagar", "apaga"];
       const cerrarWords = ["terminar", "termina", "cerrar", "cierra", "salir", "sal", "fin", "finalizar", "finaliza"];
 
       const matchesAny = (wordsList: string[]) => {
+        // Quitar acentos y signos de puntuación, y rodear de espacios
+        let normalizedCommand = command.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        normalizedCommand = normalizedCommand.replace(/[.,¿?¡!]/g, "");
+        const paddedCommand = ` ${normalizedCommand} `;
+        
         return wordsList.some(word => {
-          const regex = new RegExp(`\\b${word}\\b`, 'i');
-          return regex.test(command);
+          const normalizedWord = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          return paddedCommand.includes(` ${normalizedWord} `);
         });
       };
 
