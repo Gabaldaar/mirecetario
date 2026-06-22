@@ -94,6 +94,18 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
     return null;
   };
 
+  // LÓGICA DE TEMPORIZADOR
+  const [timerDuration, setTimerDuration] = useState<number | null>(null); // en segundos
+  const [timerRemaining, setTimerRemaining] = useState<number>(0);
+  const [timerActive, setTimerActive] = useState(false);
+  const [timerLabel, setTimerLabel] = useState('');
+  const [isWaitingForTimerDuration, setIsWaitingForTimerDuration] = useState(false);
+  const isWaitingRef = useRef(false);
+
+  useEffect(() => {
+    isWaitingRef.current = isWaitingForTimerDuration;
+  }, [isWaitingForTimerDuration]);
+
   // Scan text and start timer callback for voice commands
   const handleStartTimerVoice = () => {
     if (timerDuration !== null) {
@@ -153,12 +165,28 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
     }
   };
 
+  const handlePauseTimerVoice = () => {
+    setTimerActive(prev => !prev);
+  };
+
+  const handleCancelTimerVoice = () => {
+    setTimerDuration(null);
+    setTimerActive(false);
+  };
+
+  const handleCloseVoice = () => {
+    onClose();
+  };
+
   const { isListening, toggleListening, recognizedText } = useVoiceNavigation(
     handleNext,
     handleBack,
     speakStep,
     handleStartTimerVoice,
-    handleTextReceived
+    handleTextReceived,
+    handlePauseTimerVoice,
+    handleCancelTimerVoice,
+    handleCloseVoice
   );
 
   // Detener TTS si salimos del paso o cerramos el modo cocina
@@ -169,18 +197,6 @@ export const ModoCocina: React.FC<ModoCocinaProps> = ({ recipe, onClose }) => {
       }
     };
   }, [currentStepIndex]);
-
-  // LÓGICA DE TEMPORIZADOR
-  const [timerDuration, setTimerDuration] = useState<number | null>(null); // en segundos
-  const [timerRemaining, setTimerRemaining] = useState<number>(0);
-  const [timerActive, setTimerActive] = useState(false);
-  const [timerLabel, setTimerLabel] = useState('');
-  const [isWaitingForTimerDuration, setIsWaitingForTimerDuration] = useState(false);
-  const isWaitingRef = useRef(false);
-
-  useEffect(() => {
-    isWaitingRef.current = isWaitingForTimerDuration;
-  }, [isWaitingForTimerDuration]);
 
   useEffect(() => {
     let interval: any = null;

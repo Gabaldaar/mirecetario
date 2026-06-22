@@ -1,197 +1,272 @@
-const { onRequest } = require('firebase-functions/v2/https');
-const admin = require('firebase-admin');
-const { getFirestore } = require('firebase-admin/firestore');
-const express = require('express');
-const alexaVerifier = require('alexa-verifier-middleware');
+const { onRequest } = require("firebase-functions/v2/https");
+const admin = require("firebase-admin");
+const { getFirestore } = require("firebase-admin/firestore");
+const express = require("express");
 
-// Inicialización directa estándar para Cloud Functions
+// Inicialización de Firebase
 admin.initializeApp();
 const db = getFirestore();
 
 const app = express();
-
-// Opcional: Descomentar esta línea para habilitar verificación de firmas criptográficas de Amazon Alexa en producción
-// app.use(alexaVerifier);
-
 app.use(express.json());
 
-// Endpoint POST para recibir los Requests de la Skill de Alexa
-app.post('/alexa', async (req, res) => {
+app.post("/alexa", async (req, res) => {
   try {
     const requestType = req.body?.request?.type;
 
-    // 1. Manejar Inicio de la Skill (Soporta es-ES, es-MX, es-US, etc.)
-    if (requestType === 'LaunchRequest') {
+    // 1. Manejar LaunchRequest
+    if (requestType === "LaunchRequest") {
       return res.json({
         version: "1.0",
         response: {
           outputSpeech: {
             type: "PlainText",
-            text: "¡Hola! Bienvenido a Mi Recetario. ¿Qué receta quieres buscar hoy?"
+            text: "¡Hola! Bienvenido a Mi Recetario. ¿Qué receta queres buscar hoy?"
           },
           shouldEndSession: false
         }
       });
     }
 
-    // 2. Manejar Intents (Intenciones del usuario)
-    if (requestType === 'IntentRequest') {
+    // 2. Manejar IntentRequest
+    if (requestType === "IntentRequest") {
       const intentName = req.body.request.intent.name;
+      const sessionAttributes = req.body.session?.attributes || {};
+      const estado = sessionAttributes.estado;
+      const currentRecipe = sessionAttributes.currentRecipe;
+      const pendingRecipes = sessionAttributes.pendingRecipes;
 
-      // Intent de búsqueda de Recetas
-      if (intentName === 'SearchRecipeIntent') {
-        const recipeQuerySlot = req.body.request.intent.slots?.RecipeQuery?.value;
+      const slots = req.body.request.intent.slots || {};
+      const recipeQuerySlot = slots.nombre_receta?.value || slots.RecipeQuery?.value || slots.receta?.value || slots.recipe?.value;
+      const queryLower = (recipeQuerySlot || "").toLowerCase().trim();
 
-        if (!recipeQuerySlot) {
-          return res.json(buildAlexaResponse(
-            'No escuché bien la receta. ¿Qué plato quieres preparar?',
-            'Por favor, repite la receta que deseas buscar.',
-            false
-          ));
+      // Función auxiliar para obtener ingredientes (CORRECCIÓN DE CANTIDADES)
+      const getIngredientsText = (recipe) => {
+        let list = [];
+        if (recipe.ingredients && recipe.ingredients.length > 0) {
+          list = recipe.ingredients;
+        } else if (recipe.ingredientes && recipe.ingredientes.length > 0) {
+          list = recipe.ingredientes;
         }
-
-        console.log(`Búsqueda solicitada por Alexa: "${recipeQuerySlot}"`);
-
-        // Realizar búsqueda en Firestore
-        // Para mayor robustez, leemos las recetas y filtramos con coincidencia parcial e insensible a mayúsculas
-        const snapshot = await db.collection('recipes').get();
-        const recipesList = [];
-        snapshot.forEach(doc => {
-          recipesList.push(doc.data());
-        });
-
-        // Buscar coincidencia en el nombre de la receta
-        const queryLower = recipeQuerySlot.toLowerCase().trim();
-        const matchedRecipe = recipesList.find(r => 
-          r.name.toLowerCase().includes(queryLower) || 
-          queryLower.includes(r.name.toLowerCase())
-        );
-
-        if (!matchedRecipe) {
-          return res.json(buildAlexaResponse(
-            `Lo siento, no encontré ninguna receta para ${recipeQuerySlot} en tu recetario colaborativo. ¿Quieres intentar buscar otra?`,
-            '¿Qué otra receta deseas buscar?',
-            false
-          ));
-        }
-
-        // Encontró la receta. Armar respuesta conversacional
-        const name = matchedRecipe.name;
-        const servings = matchedRecipe.servings || 4;
-        const servingType = matchedRecipe.servingType || 'Porciones';
-        const difficulty = matchedRecipe.difficulty || 'Fácil';
         
-        // Listar ingredientes principales
-        const mainIngredients = matchedRecipe.ingredients
-          .slice(0, 4)
-          .map(ing => ing.name)
-          .join(', ');
+        if (list.length === 0) return 'sin ingredientes específicos';
+        
+        return list.map(i => {
+            const q = i.quantity ? i.quantity + ' ' : '';
+            const u = i.unit ? i.unit + ' de ' : '';
+            const n = i.name || i;
+            return (q + u + n).replace(/\s+/g, ' ').trim();
+        }).join(', ');
+      };
 
-        const ingredientsCount = matchedRecipe.ingredients.length;
+      // Función auxiliar para obtener preparación
+      const getInstructionsText = (recipe) => {
+        if (recipe.preparation && typeof recipe.preparation === 'string') return recipe.preparation;
+        if (recipe.preparacion && typeof recipe.preparacion === 'string') return recipe.preparacion;
+        if (recipe.instructions && recipe.instructions.length > 0) {
+            return Array.isArray(recipe.instructions) ? recipe.instructions.map(step => step.text || step).join('. ') : recipe.instructions;
+        }
+        if (recipe.instrucciones && recipe.instrucciones.length > 0) {
+            return Array.isArray(recipe.instrucciones) ? recipe.instrucciones.map(step => step.text || step).join('. ') : recipe.instrucciones;
+        }
+        return 'sin preparación específica';
+      };
 
-        // Construir SSML para lectura fluida
-        const speechOutput = `<speak>` +
-          `He encontrado la receta de <say-as interpret-as="name">${name}</say-as>. ` +
-          `Es de dificultad ${difficulty} y rinde para ${servings} ${servingType.toLowerCase()}. ` +
-          `Lleva en total ${ingredientsCount} ingredientes, incluyendo: ${mainIngredients}. ` +
-          (matchedRecipe.suggestion ? `La sugerencia del cocinero es: <emphasis level="moderate">${matchedRecipe.suggestion}</emphasis>. ` : '') +
-          `¿Te gustaría que te lea las instrucciones paso a paso?` +
-          `</speak>`;
+      // Función auxiliar para enviar la receta seleccionada de corrido
+      const startRecipeDictation = (recipe) => {
+          const ingredientsText = getIngredientsText(recipe);
+          const instructionsText = getInstructionsText(recipe);
+          
+          return res.json({
+              version: "1.0",
+              response: {
+                  outputSpeech: { 
+                      type: "PlainText", 
+                      text: `He encontrado la receta de ${recipe.name}. Los ingredientes son: ${ingredientsText}. Pasemos ahora a la preparación. ${instructionsText}` 
+                  },
+                  shouldEndSession: true
+              }
+          });
+      };
 
-        // Card para dispositivos Alexa con pantalla (Echo Show, etc.)
-        const cardText = `Ingredientes:\n` + 
-          matchedRecipe.ingredients.map(i => `- ${i.name} (${i.quantity > 0 ? `${i.quantity} ${i.unit}` : 'Al gusto'})`).join('\n') +
-          `\n\nInstrucciones:\n${matchedRecipe.preparation}`;
+      // Si no estamos en flujo interactivo, manejamos la búsqueda inicial
+      if (intentName === "SearchRecipeIntent" || intentName === "BuscarRecetaIntent") {
+        
+        // 1. Si hay recetas pendientes en la sesión (el usuario está respondiendo a la desambiguación)
+        if (pendingRecipes && pendingRecipes.length > 0) {
+            if (!recipeQuerySlot) {
+                const optionsTitles = pendingRecipes.map((r, index) => `Opción ${index + 1}: ${r.name}`).join('. ');
+                return res.json({
+                    version: "1.0",
+                    sessionAttributes: { pendingRecipes },
+                    response: {
+                        outputSpeech: { type: "PlainText", text: `No te entendí. Las opciones son: ${optionsTitles}. ¿Cuál prefieres?` },
+                        shouldEndSession: false
+                    }
+                });
+            }
 
-        return res.json(buildAlexaResponseSSML(speechOutput, cardText, name, false));
+            // Detectar si el usuario dijo un número
+            let selectedIndex = -1;
+            const numberWords = { "uno": 1, "primero": 1, "primera": 1, "dos": 2, "segundo": 2, "segunda": 2, "tres": 3, "tercero": 3, "tercera": 3, "cuatro": 4, "cinco": 5 };
+            
+            const parsedNumber = parseInt(queryLower);
+            if (!isNaN(parsedNumber) && parsedNumber > 0 && parsedNumber <= pendingRecipes.length) {
+                selectedIndex = parsedNumber - 1;
+            } else {
+                for (const [word, num] of Object.entries(numberWords)) {
+                    if (queryLower.includes(word) && num <= pendingRecipes.length) {
+                        selectedIndex = num - 1;
+                        break;
+                    }
+                }
+            }
+
+            let matchedRecipe = null;
+            if (selectedIndex !== -1) {
+                matchedRecipe = pendingRecipes[selectedIndex];
+            } else {
+                // Si no fue un número, buscamos coincidencia de texto dentro de las opciones
+                matchedRecipe = pendingRecipes.find(r => r.name && r.name.toLowerCase().includes(queryLower));
+            }
+
+            if (matchedRecipe) {
+                return startRecipeDictation(matchedRecipe);
+            } else {
+                const optionsTitles = pendingRecipes.map((r, index) => `Opción ${index + 1}: ${r.name}`).join('. ');
+                return res.json({
+                    version: "1.0",
+                    sessionAttributes: { pendingRecipes },
+                    response: {
+                        outputSpeech: { type: "PlainText", text: `No encontré esa opción. Las opciones son: ${optionsTitles}. ¿Cuál eliges?` },
+                        shouldEndSession: false
+                    }
+                });
+            }
+        }
+
+        // 2. Si es una búsqueda nueva
+        if (!recipeQuerySlot) {
+          return res.json({
+            version: "1.0",
+            response: {
+              outputSpeech: { type: "PlainText", text: "No escuché bien la receta. ¿Qué plato quieres preparar?" },
+              shouldEndSession: false
+            }
+          });
+        }
+
+        console.log(`Búsqueda de receta solicitada: "${recipeQuerySlot}"`);
+
+        // Buscar en Firestore (obteniendo múltiples coincidencias)
+        let matchedRecipes = [];
+        try {
+          const snapshot = await db.collection("recetas").get();
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.name && (data.name.toLowerCase().includes(queryLower) || queryLower.includes(data.name.toLowerCase()))) {
+              matchedRecipes.push(data);
+            }
+          });
+          
+          if (matchedRecipes.length === 0) {
+            const snapshot2 = await db.collection("recipes").get();
+            snapshot2.forEach(doc => {
+              const data = doc.data();
+              if (data.name && (data.name.toLowerCase().includes(queryLower) || queryLower.includes(data.name.toLowerCase()))) {
+                matchedRecipes.push(data);
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Error leyendo Firestore:", e);
+        }
+
+        if (matchedRecipes.length === 0) {
+          return res.json({
+            version: "1.0",
+            response: {
+              outputSpeech: { type: "PlainText", text: "No encontré esa receta en tu recetario. ¿Quieres intentar buscar otra?" },
+              shouldEndSession: false
+            }
+          });
+        }
+
+        if (matchedRecipes.length === 1) {
+          // Coincidencia única
+          return startRecipeDictation(matchedRecipes[0]);
+        } else {
+          // Múltiples coincidencias (limitamos a 5)
+          const optionsToRead = matchedRecipes.slice(0, 5);
+          const optionsTitles = optionsToRead.map((r, index) => `Opción ${index + 1}: ${r.name}`).join('. ');
+          
+          return res.json({
+              version: "1.0",
+              sessionAttributes: { pendingRecipes: optionsToRead },
+              response: {
+                  outputSpeech: {
+                      type: "PlainText",
+                      text: `Encontré las siguientes recetas: ${optionsTitles}. ¿Cuál de ellas quieres preparar?`
+                  },
+                  shouldEndSession: false
+              }
+          });
+        }
       }
 
-      // Intent de Ayuda
-      if (intentName === 'AMAZON.HelpIntent') {
-        return res.json(buildAlexaResponse(
-          'Puedes pedirme buscar cualquier receta de tu base de datos diciendo por ejemplo: busca bonet. ¿Qué deseas preparar?',
-          '¿Qué receta quieres buscar?',
-          false
-        ));
+      // Intents de sistema de Alexa genéricos
+      if (intentName === "AMAZON.HelpIntent") {
+        return res.json({
+          version: "1.0",
+          response: {
+            outputSpeech: {
+              type: "PlainText",
+              text: "Puedes pedirme buscar cualquier receta diciendo: busca receta de pollo. ¿Qué deseas preparar?"
+            },
+            shouldEndSession: false
+          }
+        });
       }
 
-      // Intent de Parar / Cancelar
-      if (intentName === 'AMAZON.StopIntent' || intentName === 'AMAZON.CancelIntent') {
-        return res.json(buildAlexaResponse(
-          '¡Hasta la próxima! Que disfrutes tu comida.',
-          '',
-          true
-        ));
+      if (intentName === "AMAZON.StopIntent" || intentName === "AMAZON.CancelIntent") {
+        return res.json({
+          version: "1.0",
+          response: {
+            outputSpeech: {
+              type: "PlainText",
+              text: "¡Hasta la próxima!"
+            },
+            shouldEndSession: true
+          }
+        });
       }
     }
 
-    // 3. Manejar Cierre de la Sesión
-    if (requestType === 'SessionEndedRequest') {
-      console.log('Sesión de Alexa cerrada.');
-      return res.json({ version: '1.0', response: { shouldEndSession: true } });
-    }
-
-    // Respuesta por defecto
-    return res.json(buildAlexaResponse(
-      'No estoy seguro de cómo responder a eso. ¿Quieres buscar otra receta?',
-      '¿Qué receta deseas buscar?',
-      false
-    ));
+    // Default catch-all
+    return res.json({
+      version: "1.0",
+      response: {
+        outputSpeech: {
+          type: "PlainText",
+          text: "No entendí muy bien. ¿Puedes repetir?"
+        },
+        shouldEndSession: false
+      }
+    });
 
   } catch (error) {
-    console.error('Error procesando request de Alexa:', error);
-    return res.json(buildAlexaResponse(
-      'Hubo un problema en el servidor al buscar la receta. Inténtalo de nuevo más tarde.',
-      '',
-      true
-    ));
+    console.error("Error en el webhook de Alexa:", error);
+    return res.json({
+      version: "1.0",
+      response: {
+        outputSpeech: {
+          type: "PlainText",
+          text: "Hubo un problema al consultar tus recetas."
+        },
+        shouldEndSession: true
+      }
+    });
   }
 });
 
-// Función helper para respuestas Alexa simples en texto plano
-function buildAlexaResponse(speechText, repromptText, shouldEndSession) {
-  return {
-    version: '1.0',
-    response: {
-      outputSpeech: {
-        type: 'PlainText',
-        text: speechText
-      },
-      reprompt: repromptText ? {
-        outputSpeech: {
-          type: 'PlainText',
-          text: repromptText
-        }
-      } : undefined,
-      shouldEndSession: shouldEndSession
-    }
-  };
-}
-
-// Función helper para respuestas con síntesis de voz SSML y tarjeta visual
-function buildAlexaResponseSSML(ssmlSpeech, cardText, title, shouldEndSession) {
-  return {
-    version: '1.0',
-    response: {
-      outputSpeech: {
-        type: 'SSML',
-        ssml: ssmlSpeech
-      },
-      card: {
-        type: 'Simple',
-        title: `Recetario: ${title}`,
-        content: cardText
-      },
-      reprompt: {
-        outputSpeech: {
-          type: 'PlainText',
-          text: '¿Quieres que te dicte los pasos de preparación?'
-        }
-      },
-      shouldEndSession: shouldEndSession
-    }
-  };
-}
-
-// Exportar la Cloud Function Gen 2
-exports.alexaRecipeSearch = onRequest({ cors: true }, app);
+exports.alexaRecipeSearch = onRequest({ invoker: "public" }, app);

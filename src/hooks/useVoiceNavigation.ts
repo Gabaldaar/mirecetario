@@ -5,18 +5,20 @@ export const useVoiceNavigation = (
   onBack: () => void,
   onSpeak?: () => void,
   onStartTimer?: () => void,
-  onTextReceived?: (text: string) => void
+  onTextReceived?: (text: string) => void,
+  onPauseTimer?: () => void,
+  onCancelTimer?: () => void,
+  onClose?: () => void
 ) => {
   const [isListening, setIsListening] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
   const recognitionRef = useRef<any>(null);
   
-  // Use refs for callbacks to avoid stale closures in the single SpeechRecognition instance
-  const callbacksRef = useRef({ onNext, onBack, onSpeak, onStartTimer, onTextReceived });
+  const callbacksRef = useRef({ onNext, onBack, onSpeak, onStartTimer, onTextReceived, onPauseTimer, onCancelTimer, onClose });
   
   useEffect(() => {
-    callbacksRef.current = { onNext, onBack, onSpeak, onStartTimer, onTextReceived };
-  }, [onNext, onBack, onSpeak, onStartTimer, onTextReceived]);
+    callbacksRef.current = { onNext, onBack, onSpeak, onStartTimer, onTextReceived, onPauseTimer, onCancelTimer, onClose };
+  }, [onNext, onBack, onSpeak, onStartTimer, onTextReceived, onPauseTimer, onCancelTimer, onClose]);
 
   const isListeningRef = useRef(false);
 
@@ -46,9 +48,15 @@ export const useVoiceNavigation = (
       const retrocederWords = ["anterior", "atrás", "atras", "retroceder", "volver"];
       const repetirWords = ["repetir", "leer", "cómo", "como", "otra vez", "escuchar"];
       const temporizadorWords = ["iniciar", "temporizador", "tiempo", "cronómetro", "cronometro", "comenzar"];
+      const pausarWords = ["pausar", "pausa", "detener", "detén", "deten", "parar", "para", "espera"];
+      const cancelarWords = ["quitar", "quita", "cancelar", "cancela", "apagar", "apaga"];
+      const cerrarWords = ["terminar", "termina", "cerrar", "cierra", "salir", "sal", "fin", "finalizar", "finaliza"];
 
       const matchesAny = (wordsList: string[]) => {
-        return wordsList.some(word => command.includes(word));
+        return wordsList.some(word => {
+          const regex = new RegExp(`\\b${word}\\b`, 'i');
+          return regex.test(command);
+        });
       };
 
       if (matchesAny(avanzarWords)) {
@@ -58,6 +66,18 @@ export const useVoiceNavigation = (
       } else if (matchesAny(repetirWords)) {
         if (callbacksRef.current.onSpeak) {
           callbacksRef.current.onSpeak();
+        }
+      } else if (matchesAny(cerrarWords)) {
+        if (callbacksRef.current.onClose) {
+          callbacksRef.current.onClose();
+        }
+      } else if (matchesAny(pausarWords)) {
+        if (callbacksRef.current.onPauseTimer) {
+          callbacksRef.current.onPauseTimer();
+        }
+      } else if (matchesAny(cancelarWords)) {
+        if (callbacksRef.current.onCancelTimer) {
+          callbacksRef.current.onCancelTimer();
         }
       } else if (matchesAny(temporizadorWords)) {
         if (callbacksRef.current.onStartTimer) {
