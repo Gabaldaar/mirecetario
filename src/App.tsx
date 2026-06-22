@@ -20,6 +20,7 @@ import { PantrySearch } from './components/PantrySearch';
 import { EquivalenciasModal } from './components/EquivalenciasModal';
 import { MenuPlanner } from './components/MenuPlanner';
 import { IngredientsManagerModal } from './components/IngredientsManagerModal';
+import { GuiaUso } from './components/GuiaUso';
 import { 
   ChefHat, 
   Search, 
@@ -35,7 +36,9 @@ import {
   Settings,
   AlertCircle,
   ShoppingBag,
-  Mic
+  Mic,
+  HelpCircle,
+  Share2
 } from 'lucide-react';
 
 function App() {
@@ -55,6 +58,9 @@ function App() {
   const [isCreating, setIsCreating] = useState(false);
   const [showEquivalences, setShowEquivalences] = useState(false);
   const [showIngredientsManager, setShowIngredientsManager] = useState(false);
+  const [showGuiaUso, setShowGuiaUso] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileFabMenu, setShowMobileFabMenu] = useState(false);
 
   // Estado de Ingredientes Master y Menú Colaborativo
   const [masterIngredients, setMasterIngredients] = useState<MasterIngredient[]>([]);
@@ -65,7 +71,7 @@ function App() {
   
   // Estado del Tema
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('theme') as 'dark' | 'light') || 'dark';
+    return (localStorage.getItem('theme') as 'dark' | 'light') || 'light';
   });
 
   // Filtros de búsqueda local
@@ -324,6 +330,26 @@ function App() {
     );
   };
 
+  // Compartir Aplicación
+  const handleShareApp = async () => {
+    const shareData = {
+      title: 'Mi Recetario Colaborativo',
+      text: '¡Únete a Mi Recetario y colaboremos en nuestras recetas y lista de compras!',
+      url: window.location.origin
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error('Error al compartir:', err);
+      }
+    } else {
+      navigator.clipboard.writeText(shareData.url);
+      setToastMessage('Enlace copiado al portapapeles');
+    }
+  };
+
   // Alternar Favorito
   const handleToggleFavorite = async (recipeId: string, recipeName: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -516,24 +542,17 @@ function App() {
           </div>
 
           {/* Perfil de Usuario y Logout */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <span className="hidden sm:inline-block text-xs font-semibold text-text-secondary">
               Hola, <span className="text-teal-accent">{currentUser.displayName || 'Cocinero'}</span>
             </span>
+            
             <button
-              onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-              title={theme === 'dark' ? "Modo Claro" : "Modo Oscuro"}
-              className="p-2.5 rounded-xl bg-bg-input-half border border-border-app text-text-secondary hover:text-amber-400 hover:bg-bg-card transition cursor-pointer"
+              onClick={() => setShowGuiaUso(true)}
+              title="Guía de Uso"
+              className="p-2.5 rounded-xl bg-bg-input-half border border-border-app text-text-secondary hover:text-teal-accent hover:bg-bg-card transition cursor-pointer"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => setShowIngredientsManager(true)}
-              title="Administrar Ingredientes"
-              className="p-2 px-3 rounded-xl bg-bg-input-half border border-border-app text-text-secondary hover:text-teal-accent hover:bg-bg-card transition cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden md:inline">Ingredientes</span>
+              <HelpCircle className="w-4 h-4" />
             </button>
             <button
               onClick={() => setShowEquivalences(true)}
@@ -542,19 +561,58 @@ function App() {
             >
               <Scale className="w-4 h-4" />
             </button>
-            <button
-              onClick={handleLogout}
-              title="Cerrar sesión"
-              className="p-2.5 rounded-xl bg-bg-input-half border border-border-app text-text-secondary hover:text-text-primary hover:bg-bg-card transition cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+
+            {/* Menú de Usuario */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="w-10 h-10 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-teal-accent transition cursor-pointer"
+                title="Menú de usuario"
+              >
+                {currentUser.photoURL ? (
+                  <img src={currentUser.photoURL} alt="Perfil" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-teal-accent font-bold text-sm">
+                    {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                )}
+              </button>
+
+              {showUserMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)}></div>
+                  <div className="absolute right-0 mt-2 w-56 bg-bg-card border border-border-app rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="p-3 border-b border-border-app">
+                      <p className="text-sm font-bold text-text-primary truncate">{currentUser.displayName || 'Usuario'}</p>
+                      <p className="text-xs text-text-secondary truncate">{currentUser.email || ''}</p>
+                    </div>
+                    <div className="p-2 flex flex-col gap-1">
+                      <button onClick={() => { setShowIngredientsManager(true); setShowUserMenu(false); }} className="flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-teal-accent hover:bg-bg-input-half rounded-xl transition w-full text-left cursor-pointer">
+                        <Settings className="w-4 h-4" /> Ingredientes
+                      </button>
+                      <button onClick={() => { setTheme(prev => prev === 'dark' ? 'light' : 'dark'); setShowUserMenu(false); }} className="flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-amber-400 hover:bg-bg-input-half rounded-xl transition w-full text-left cursor-pointer">
+                        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />} 
+                        {theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}
+                      </button>
+                      <button onClick={() => { handleShareApp(); setShowUserMenu(false); }} className="flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-blue-400 hover:bg-bg-input-half rounded-xl transition w-full text-left cursor-pointer">
+                        <Share2 className="w-4 h-4" /> Compartir Recetario
+                      </button>
+                    </div>
+                    <div className="p-2 border-t border-border-app">
+                      <button onClick={() => { handleLogout(); setShowUserMenu(false); }} className="flex items-center gap-3 px-3 py-2 text-sm text-rose-500 hover:bg-rose-500/10 rounded-xl transition w-full text-left font-semibold cursor-pointer">
+                        <LogOut className="w-4 h-4" /> Cerrar Sesión
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       {/* CUERPO PRINCIPAL DE LA APLICACIÓN */}
-      <main className="flex-1 pb-24 print:pb-0">
+      <main className="flex-1 pb-32 md:pb-12 print:pb-0">
         
         {/* MODO EDICIÓN / CREACIÓN */}
         {isCreating || isEditing ? (
@@ -584,8 +642,8 @@ function App() {
           /* LISTADOS GENERALES */
           <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 text-text-primary">
             
-            {/* TABS DE SECCIÓN */}
-            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 border-b border-border-app pb-3 print:hidden">
+            {/* TABS DE SECCIÓN (DESKTOP) */}
+            <div className="hidden md:flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 border-b border-border-app pb-3 print:hidden">
               <div className="flex flex-wrap gap-1">
                 <button
                   onClick={() => setActiveTab('explore')}
@@ -821,8 +879,90 @@ function App() {
         )}
       </main>
 
+      {/* NAVEGACIÓN MÓVIL (BOTTOM BAR) */}
+      {!isCreating && !isEditing && !currentRecipe && (
+        <>
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-bg-app/90 backdrop-blur-lg border-t border-border-app z-40 pb-safe px-2 py-1 flex items-center justify-around shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.3)]">
+            <button
+              onClick={() => { setActiveTab('explore'); setShowMobileFabMenu(false); }}
+              className={`flex flex-col items-center justify-center w-1/4 p-2 transition-colors ${activeTab === 'explore' ? 'text-teal-accent' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <BookOpen className="w-5 h-5 mb-1" />
+              <span className="text-[10px] font-bold">Explorar</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('pantry'); setShowMobileFabMenu(false); }}
+              className={`flex flex-col items-center justify-center w-1/4 p-2 transition-colors ${activeTab === 'pantry' ? 'text-teal-accent' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <UtensilsCrossed className="w-5 h-5 mb-1" />
+              <span className="text-[10px] font-bold">Despensa</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('favorites'); setShowMobileFabMenu(false); }}
+              className={`flex flex-col items-center justify-center w-1/4 p-2 transition-colors ${activeTab === 'favorites' ? 'text-teal-accent' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <Heart className="w-5 h-5 mb-1" />
+              <span className="text-[10px] font-bold">Favoritos</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('menu'); setShowMobileFabMenu(false); }}
+              className={`flex flex-col items-center justify-center w-1/4 p-2 transition-colors ${activeTab === 'menu' ? 'text-teal-accent' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <div className="relative">
+                <ShoppingBag className="w-5 h-5 mb-1" />
+                {menuItems.length > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                    {menuItems.length}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] font-bold">Lista</span>
+            </button>
+          </div>
+
+          {/* FAB MÓVIL Y MENÚ RÁPIDO */}
+          <div className="md:hidden fixed bottom-[72px] right-4 z-50 flex flex-col items-end">
+            {showMobileFabMenu && (
+              <div className="flex flex-col gap-3 mb-4 items-end animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <button 
+                  onClick={() => { setShowIngredientsManager(true); setShowMobileFabMenu(false); }}
+                  className="flex items-center gap-3 px-4 py-2 bg-bg-card border border-border-app rounded-full text-sm font-bold text-text-primary shadow-lg"
+                >
+                  <span>Ingredientes</span>
+                  <div className="w-8 h-8 rounded-full bg-teal-500/10 text-teal-accent flex items-center justify-center">
+                    <Settings className="w-4 h-4" />
+                  </div>
+                </button>
+                <button 
+                  onClick={() => { setIsCreating(true); setShowMobileFabMenu(false); }}
+                  className="flex items-center gap-3 px-4 py-2 bg-bg-card border border-border-app rounded-full text-sm font-bold text-text-primary shadow-lg"
+                >
+                  <span>Nueva Receta</span>
+                  <div className="w-8 h-8 rounded-full bg-teal-accent text-bg-app flex items-center justify-center">
+                    <Plus className="w-5 h-5 stroke-[3]" />
+                  </div>
+                </button>
+              </div>
+            )}
+            
+            <button
+              onClick={() => setShowMobileFabMenu(!showMobileFabMenu)}
+              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-transform duration-200 ${
+                showMobileFabMenu ? 'bg-bg-card border border-border-app text-text-secondary rotate-45' : 'bg-teal-accent text-bg-app shadow-teal-500/30 hover:scale-105'
+              }`}
+            >
+              <Plus className="w-6 h-6 stroke-[3]" />
+            </button>
+          </div>
+          
+          {showMobileFabMenu && (
+            <div className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setShowMobileFabMenu(false)}></div>
+          )}
+        </>
+      )}
+
       {/* FOOTER PIE DE PÁGINA */}
-      <footer className="bg-bg-app border-t border-border-app py-6 text-center text-xs text-text-secondary print:hidden">
+      <footer className="bg-bg-app border-t border-border-app py-6 pb-28 md:pb-6 text-center text-xs text-text-secondary print:hidden">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 Mi Recetario Colaborativo e Inteligente. Todos los derechos reservados.</p>
           <div className="flex gap-4">
@@ -846,6 +986,11 @@ function App() {
           showAlert={handleShowAlert}
           showConfirm={handleShowConfirm}
         />
+      )}
+
+      {/* GUÍA DE USO */}
+      {showGuiaUso && (
+        <GuiaUso onClose={() => setShowGuiaUso(false)} />
       )}
 
       {/* DIÁLOGO / CONFIRMACIÓN PERSONALIZADO */}
