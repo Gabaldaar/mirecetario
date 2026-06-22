@@ -34,7 +34,8 @@ import {
   Moon,
   Settings,
   AlertCircle,
-  ShoppingBag
+  ShoppingBag,
+  Mic
 } from 'lucide-react';
 
 function App() {
@@ -69,6 +70,7 @@ function App() {
 
   // Filtros de búsqueda local
   const [searchQuery, setSearchQuery] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedCuisine, setSelectedCuisine] = useState('Todas');
   const [selectedDifficulty, setSelectedDifficulty] = useState('Todas');
@@ -435,6 +437,42 @@ function App() {
     setSelectedDifficulty('Todas');
   };
 
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      handleShowAlert('Error', 'Tu navegador no soporta búsqueda por voz.');
+      return;
+    }
+
+    if (isListening) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      const cleanTranscript = transcript.toLowerCase().trim();
+      setSearchQuery(cleanTranscript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   // Categorías, Cocinas y Dificultades dinámicas extraídas del recetario
   const categoriesList = useMemo(() => {
     return ['Todas', ...Array.from(new Set(recipes.map(r => r.category).filter(Boolean)))].sort();
@@ -622,8 +660,18 @@ function App() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Buscar por receta o ingrediente..."
-                        className="block w-full pl-9 pr-3 py-2 border border-border-app rounded-xl bg-bg-input text-text-primary placeholder-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-teal-accent/20 text-xs"
+                        className="block w-full pl-9 pr-10 py-2 border border-border-app rounded-xl bg-bg-input text-text-primary placeholder-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-teal-accent/20 text-xs"
                       />
+                      <button
+                        type="button"
+                        onClick={handleVoiceSearch}
+                        className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors cursor-pointer ${
+                          isListening ? 'text-red-500 animate-pulse' : 'text-text-secondary hover:text-teal-accent'
+                        }`}
+                        title="Búsqueda por voz"
+                      >
+                        <Mic className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 
