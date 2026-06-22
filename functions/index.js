@@ -1,10 +1,12 @@
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
+const { getFirestore } = require('firebase-admin/firestore');
 const express = require('express');
 const alexaVerifier = require('alexa-verifier-middleware');
 
+// Inicialización directa estándar para Cloud Functions
 admin.initializeApp();
-const db = admin.firestore();
+const db = getFirestore();
 
 const app = express();
 
@@ -18,13 +20,18 @@ app.post('/alexa', async (req, res) => {
   try {
     const requestType = req.body?.request?.type;
 
-    // 1. Manejar Inicio de la Skill
+    // 1. Manejar Inicio de la Skill (Soporta es-ES, es-MX, es-US, etc.)
     if (requestType === 'LaunchRequest') {
-      return res.json(buildAlexaResponse(
-        'Bienvenido a tu Recetario Inteligente. ¿Qué receta te gustaría buscar hoy?',
-        'Busca una receta diciendo, por ejemplo: Busca buñuelos de manzana.',
-        false
-      ));
+      return res.json({
+        version: "1.0",
+        response: {
+          outputSpeech: {
+            type: "PlainText",
+            text: "¡Hola! Bienvenido a Mi Recetario. ¿Qué receta quieres buscar hoy?"
+          },
+          shouldEndSession: false
+        }
+      });
     }
 
     // 2. Manejar Intents (Intenciones del usuario)
