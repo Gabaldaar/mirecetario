@@ -6,7 +6,6 @@ import {
   Heart, 
   ChefHat, 
   ShoppingBag, 
-  ListChecks,
   Volume2,
   Clock,
   HelpCircle,
