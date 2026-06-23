@@ -30,7 +30,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   return (
     <div 
       onClick={onClick}
-      className="group bg-bg-card border border-border-app rounded-2xl p-5 hover:border-teal-accent/50 hover:bg-bg-card/85 transition-all duration-300 cursor-pointer flex flex-col justify-between h-full relative overflow-hidden backdrop-blur-sm"
+      className="group bg-bg-card border border-border-app shadow-md shadow-black/5 hover:shadow-xl hover:shadow-teal-accent/10 rounded-2xl p-5 hover:border-teal-accent/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between h-full relative overflow-hidden backdrop-blur-sm"
     >
       {/* Elemento de brillo sutil en hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-teal-accent/0 via-purple-accent/0 to-teal-accent/5 group-hover:from-teal-accent/2 group-hover:to-purple-accent/2 transition-all duration-300 pointer-events-none"></div>
