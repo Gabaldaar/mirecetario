@@ -61,6 +61,9 @@ function App() {
   const [showGuiaUso, setShowGuiaUso] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileFabMenu, setShowMobileFabMenu] = useState(false);
+  
+  // Estado para PWA Install Prompt
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // Estado de Ingredientes Master y Menú Colaborativo
   const [masterIngredients, setMasterIngredients] = useState<MasterIngredient[]>([]);
@@ -134,6 +137,25 @@ function App() {
       },
       isDestructive
     });
+  };
+
+  // Monitorizar PWA Install Prompt
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
   };
 
   // Monitorizar cambios en la autenticación del usuario
@@ -610,6 +632,30 @@ function App() {
           </div>
         </div>
       </header>
+
+      {/* BANNER DE INSTALACIÓN PWA */}
+      {deferredPrompt && (
+        <div className="bg-teal-500/10 border-b border-teal-500/20 px-4 py-3 flex items-center justify-between z-30 print:hidden animate-in slide-in-from-top duration-300">
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-text-primary">Instala Mi Recetario</span>
+            <span className="text-xs text-text-secondary">Accede más rápido y sin conexión desde tu inicio</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setDeferredPrompt(null)}
+              className="text-xs font-semibold text-text-secondary hover:text-text-primary cursor-pointer transition"
+            >
+              Ahora no
+            </button>
+            <button
+              onClick={handleInstallApp}
+              className="text-xs font-bold bg-teal-accent text-bg-app px-3 py-1.5 rounded-lg shadow-sm hover:opacity-90 cursor-pointer transition"
+            >
+              Instalar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* CUERPO PRINCIPAL DE LA APLICACIÓN */}
       <main className="flex-1 pb-32 md:pb-12 print:pb-0">
