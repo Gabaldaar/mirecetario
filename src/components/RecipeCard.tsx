@@ -38,7 +38,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       <div>
         {/* Fila superior con Categoría, Agregar al Menú y Favorito */}
         <div className="flex justify-between items-start gap-2 mb-3">
-          <span className="text-[10px] font-bold tracking-wider text-purple-accent uppercase bg-purple-accent/15 border border-purple-accent/25 px-2.5 py-0.5 rounded-full">
+          <span className="text-sm font-bold tracking-wider text-purple-accent uppercase bg-purple-accent/15 border border-purple-accent/25 px-2.5 py-0.5 rounded-full">
             {recipe.category}
           </span>
           <div className="flex items-center gap-1.5">
@@ -69,13 +69,13 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         </div>
 
         {/* Nombre de la Receta */}
-        <h3 className="text-lg font-bold text-text-primary group-hover:text-teal-accent transition-colors leading-snug line-clamp-2 mb-2 font-heading">
+        <h3 className="text-2xl font-bold text-text-primary group-hover:text-teal-accent transition-colors leading-snug line-clamp-2 mb-2 font-heading">
           {recipe.name}
         </h3>
 
         {/* Sugerencia/Descripción corta */}
         {recipe.suggestion && (
-          <p className="text-xs text-text-secondary line-clamp-2 mb-4 italic font-light">
+          <p className="text-base text-text-secondary line-clamp-2 mb-4 italic font-light">
             "{recipe.suggestion}"
           </p>
         )}
@@ -85,13 +85,13 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       <div className="space-y-3 mt-auto pt-4 border-t border-border-app/40">
         <div className="flex flex-wrap gap-2">
           {/* Badge Dificultad */}
-          <span className={`text-[10px] font-semibold border px-2 py-0.5 rounded-md ${getDifficultyColor(recipe.difficulty)}`}>
+          <span className={`text-sm font-semibold border px-2 py-0.5 rounded-md ${getDifficultyColor(recipe.difficulty)}`}>
             {recipe.difficulty}
           </span>
 
           {/* Badge Cocina */}
           {recipe.cuisine && recipe.cuisine !== 'Sin Definir' && (
-            <span className="text-[10px] font-semibold bg-bg-input-half border border-border-app/60 text-text-secondary px-2 py-0.5 rounded-md">
+            <span className="text-sm font-semibold bg-bg-input-half border border-border-app/60 text-text-secondary px-2 py-0.5 rounded-md">
               {recipe.cuisine}
             </span>
           )}
