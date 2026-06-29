@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Recipe, Ingredient, Note, MasterIngredient } from '../types';
-import { Trash2, Save, X, PlusCircle } from 'lucide-react';
-import { db } from '../firebase/config';
+import { Trash2, Save, X, PlusCircle, Wand2, Loader2 } from 'lucide-react';
+import { db, app, ai } from '../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getGenerativeModel } from 'firebase/ai';
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -120,6 +122,11 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
   // Listas Dinámicas
   const [ingredients, setIngredients] = useState<(Omit<Ingredient, 'id'> & { category?: string })[]>([]);
   const [notes, setNotes] = useState<Omit<Note, 'id'>[]>([]);
+
+  // Estados de IA
+  const [importUrl, setImportUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState('');
 
   // Estados de Autocompletado y Foco
   const [categoryFocused, setCategoryFocused] = useState(false);
@@ -285,6 +292,72 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
     });
   };
 
+  const handleImportFromUrl = async () => {
+    if (!importUrl) return;
+    setIsImporting(true);
+    setImportError('');
+    
+    try {
+      const functions = getFunctions(app);
+      const fetchUrlContent = httpsCallable(functions, 'fetchUrlContent');
+      
+      // 1. Obtener HTML
+      const result = await fetchUrlContent({ url: importUrl }) as any;
+      const htmlText = result.data?.text;
+      
+      if (!htmlText) throw new Error("No se pudo obtener el contenido de la URL.");
+
+      // 2. Procesar con Gemini
+      const model = getGenerativeModel(ai, { 
+        model: "gemini-2.5-flash",
+        generationConfig: {
+          responseMimeType: "application/json",
+        }
+      });
+      
+      const prompt = `
+      Eres un experto culinario. Analiza el siguiente texto extraído de una página web y extrae los datos de la receta.
+      Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura:
+      {
+        "name": "Nombre de la receta",
+        "preparation": "Instrucciones paso a paso en formato de texto. Usa saltos de línea para cada paso.",
+        "servings": número de porciones (entero, por defecto 4),
+        "ingredients": [
+          { "name": "nombre", "quantity": número, "unit": "Gramos|Unidades|Cucharadas|Tazas|Litros|Al gusto|etc", "observation": "picado, rallado, etc (opcional)" }
+        ]
+      }
+      
+      Texto de la página:
+      ${htmlText.substring(0, 30000)}
+      `;
+
+      const aiResult = await model.generateContent(prompt);
+      const responseText = aiResult.response.text();
+      const parsed = JSON.parse(responseText);
+
+      // Autocompletar el formulario
+      if (parsed.name) setName(parsed.name);
+      if (parsed.preparation) setPreparation(parsed.preparation);
+      if (parsed.servings) setServings(parsed.servings);
+      if (parsed.ingredients && Array.isArray(parsed.ingredients)) {
+        setIngredients(parsed.ingredients.map((ing: any) => ({
+          name: ing.name || '',
+          quantity: ing.quantity || 0,
+          unit: ing.unit || 'Al gusto',
+          observation: ing.observation || '',
+          category: 'Varios'
+        })));
+      }
+      
+      setImportUrl('');
+    } catch (err: any) {
+      console.error(err);
+      setImportError(err.message || 'Error al importar la receta.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   // Filtrado condicional: si no se ha modificado, mostrar lista completa
   const filteredCategories = useMemo(() => {
     if (!isCategoryModified) return categoriesSuggestions;
@@ -316,6 +389,34 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
 
       <form onSubmit={handleSubmit} className="space-y-8 bg-bg-card border border-border-app p-6 md:p-8 rounded-3xl backdrop-blur-md">
         
+        {/* Sección IA: Importador por URL */}
+        <div className="bg-purple-accent/10 border border-purple-accent/20 p-5 rounded-2xl space-y-3">
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-5 h-5 text-purple-accent" />
+            <h2 className="text-sm font-bold text-purple-accent uppercase tracking-widest">Autocompletar con IA</h2>
+          </div>
+          <p className="text-xs text-text-secondary">Pega el link de cualquier receta de internet y la Inteligencia Artificial rellenará los campos por ti.</p>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={importUrl}
+              onChange={(e) => setImportUrl(e.target.value)}
+              placeholder="https://www.paulinacocina.net/..."
+              className="flex-1 px-4 py-2 border border-purple-accent/30 rounded-xl bg-bg-input text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-accent/40"
+              disabled={isImporting}
+            />
+            <button
+              type="button"
+              onClick={handleImportFromUrl}
+              disabled={!importUrl || isImporting}
+              className="px-4 py-2 bg-purple-accent text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+            >
+              {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Importar'}
+            </button>
+          </div>
+          {importError && <p className="text-xs text-rose-accent mt-1">{importError}</p>}
+        </div>
+
         {/* Sección 1: Información Básica */}
         <div className="space-y-4">
           <h2 className="text-sm font-bold text-teal-accent uppercase tracking-widest border-b border-border-app pb-2">Información Básica</h2>

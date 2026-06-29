@@ -1,4 +1,4 @@
-const { onRequest } = require("firebase-functions/v2/https");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const { getFirestore } = require("firebase-admin/firestore");
 const express = require("express");
@@ -9,6 +9,27 @@ const db = getFirestore();
 
 const app = express();
 app.use(express.json());
+
+// Proxy CORS simple para obtener el texto de una URL (evita errores CORS en el frontend)
+exports.fetchUrlContent = onCall(async (request) => {
+  const url = request.data.url;
+  if (!url) {
+    throw new HttpsError("invalid-argument", "The function must be called with a 'url' parameter.");
+  }
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new HttpsError("internal", `HTTP Error: ${response.status}`);
+    }
+    const text = await response.text();
+    // Devolvemos el HTML en bruto, el frontend (Gemini) se encargará de extraer la info
+    return { text };
+  } catch (error) {
+    console.error("Error fetching URL:", error);
+    throw new HttpsError("internal", error.message);
+  }
+});
 
 app.post("/alexa", async (req, res) => {
   try {
