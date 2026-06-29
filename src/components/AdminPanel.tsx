@@ -56,7 +56,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ recipes }) => {
           <ExternalLink className="w-4 h-4 text-text-secondary group-hover:text-teal-accent transition" />
         </a>
 
-        <a href="https://console.firebase.google.com/project/mirecetario-1a58d/analytics/app/web:1fdfe149a4f2c0f0033291/debugview" target="_blank" rel="noopener noreferrer" className="bg-bg-card border border-border-app p-4 rounded-2xl shadow-sm hover:border-teal-500/50 hover:shadow-md transition-all group flex items-start justify-between cursor-pointer">
+        <a href="https://console.firebase.google.com/project/mirecetario-1a58d/analytics/debugview" target="_blank" rel="noopener noreferrer" className="bg-bg-card border border-border-app p-4 rounded-2xl shadow-sm hover:border-teal-500/50 hover:shadow-md transition-all group flex items-start justify-between cursor-pointer">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-slate-500/5 border border-slate-500/10 rounded-xl text-slate-400 group-hover:bg-teal-500/10 group-hover:border-teal-500/20 group-hover:text-teal-accent transition">
               <Activity className="w-5 h-5" />
