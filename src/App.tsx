@@ -1055,7 +1055,10 @@ function App() {
       <footer className="bg-bg-app border-t border-border-app py-6 pb-28 md:pb-6 text-center text-xs text-text-secondary print:hidden">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 Mi Recetario Colaborativo e Inteligente. Todos los derechos reservados.</p>
-          <div className="flex gap-4">
+          <div className="flex gap-3 items-center">
+            <span className="text-[10px] text-text-secondary/60 font-mono font-bold tracking-widest uppercase">
+              v1.0.0
+            </span>
             <span className="flex items-center gap-1 text-[10px] bg-teal-500/5 text-teal-400 border border-teal-500/10 px-2.5 py-0.5 rounded-full font-bold">
               Firestore Offline Activo
             </span>
