@@ -27,12 +27,7 @@ export interface Recipe {
   createdAt: any;
   ingredients: Ingredient[];
   notes: Note[];
-  nutritionalInfo?: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  };
+  isFavorite?: boolean;
 }
 
 export interface Favorite {

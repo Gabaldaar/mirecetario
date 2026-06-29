@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Recipe, Ingredient, Note, MasterIngredient } from '../types';
-import { Trash2, Save, X, PlusCircle, Wand2, Loader2 } from 'lucide-react';
-import { db, app } from '../firebase/config';
+import { Trash2, Save, X, PlusCircle } from 'lucide-react';
+import { db } from '../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -121,11 +120,6 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
   // Listas Dinámicas
   const [ingredients, setIngredients] = useState<(Omit<Ingredient, 'id'> & { category?: string })[]>([]);
   const [notes, setNotes] = useState<Omit<Note, 'id'>[]>([]);
-
-  // Estados de IA
-  const [importUrl, setImportUrl] = useState('');
-  const [isImporting, setIsImporting] = useState(false);
-  const [importError, setImportError] = useState('');
 
   // Estados de Autocompletado y Foco
   const [categoryFocused, setCategoryFocused] = useState(false);
@@ -291,77 +285,6 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
     });
   };
 
-  const handleImportFromUrl = async () => {
-    if (!importUrl) return;
-    setIsImporting(true);
-    setImportError('');
-    
-    try {
-      const functions = getFunctions(app);
-      const fetchUrlContent = httpsCallable(functions, 'fetchUrlContent');
-      
-      // 1. Obtener HTML
-      const result = await fetchUrlContent({ url: importUrl }) as any;
-      const recipeData = result.data?.recipeData;
-      
-      if (!recipeData) throw new Error("No se encontraron metadatos de receta en la URL.");
-
-      // Autocompletar el formulario
-      if (recipeData.name) setName(recipeData.name);
-      
-      // Intentar parsear las porciones
-      if (recipeData.recipeYield) {
-        let servingsMatch = String(recipeData.recipeYield).match(/\d+/);
-        if (servingsMatch) setServings(parseInt(servingsMatch[0]));
-      }
-
-      // Parsear preparación
-      if (recipeData.recipeInstructions) {
-        let prepText = '';
-        if (Array.isArray(recipeData.recipeInstructions)) {
-          prepText = recipeData.recipeInstructions.map((step: any, index: number) => {
-            return `${index + 1}. ${step.text || step}`;
-          }).join('\n\n');
-        } else if (typeof recipeData.recipeInstructions === 'string') {
-          prepText = recipeData.recipeInstructions;
-        }
-        if (prepText) setPreparation(prepText);
-      }
-
-      // Parsear ingredientes
-      if (recipeData.recipeIngredient && Array.isArray(recipeData.recipeIngredient)) {
-        setIngredients(recipeData.recipeIngredient.map((ingStr: string) => {
-          // Intento básico de parsear un string "2 tazas de harina" (sin IA)
-          let qty = 1;
-          let unit = 'Al gusto';
-          let name = ingStr;
-
-          const match = ingStr.match(/^([\d.,\/]+)\s*(taza|cucharada|cucharadita|g|kg|ml|l|unidad|pizca|diente)s?\s*(?:de\s*)?(.*)/i);
-          if (match) {
-            qty = parseFloat(match[1].replace(',', '.'));
-            unit = match[2];
-            name = match[3] || ingStr;
-          }
-
-          return {
-            name: name.trim().substring(0, 50),
-            quantity: isNaN(qty) ? 1 : qty,
-            unit: unit,
-            observation: '',
-            category: 'Varios'
-          };
-        }));
-      }
-      
-      setImportUrl('');
-    } catch (err: any) {
-      console.error(err);
-      setImportError(err.message || 'Error al importar la receta.');
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
   // Filtrado condicional: si no se ha modificado, mostrar lista completa
   const filteredCategories = useMemo(() => {
     if (!isCategoryModified) return categoriesSuggestions;
@@ -393,34 +316,6 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
 
       <form onSubmit={handleSubmit} className="space-y-8 bg-bg-card border border-border-app p-6 md:p-8 rounded-3xl backdrop-blur-md">
         
-        {/* Sección IA: Importador por URL */}
-        <div className="bg-purple-accent/10 border border-purple-accent/20 p-5 rounded-2xl space-y-3">
-          <div className="flex items-center gap-2">
-            <Wand2 className="w-5 h-5 text-purple-accent" />
-            <h2 className="text-sm font-bold text-purple-accent uppercase tracking-widest">Autocompletar con IA</h2>
-          </div>
-          <p className="text-xs text-text-secondary">Pega el link de cualquier receta de internet y la Inteligencia Artificial rellenará los campos por ti.</p>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={importUrl}
-              onChange={(e) => setImportUrl(e.target.value)}
-              placeholder="https://www.paulinacocina.net/..."
-              className="flex-1 px-4 py-2 border border-purple-accent/30 rounded-xl bg-bg-input text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-accent/40"
-              disabled={isImporting}
-            />
-            <button
-              type="button"
-              onClick={handleImportFromUrl}
-              disabled={!importUrl || isImporting}
-              className="px-4 py-2 bg-purple-accent text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-            >
-              {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Importar'}
-            </button>
-          </div>
-          {importError && <p className="text-xs text-rose-accent mt-1">{importError}</p>}
-        </div>
-
         {/* Sección 1: Información Básica */}
         <div className="space-y-4">
           <h2 className="text-sm font-bold text-teal-accent uppercase tracking-widest border-b border-border-app pb-2">Información Básica</h2>

@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import type { Recipe } from '../types';
 import { ModoCocina } from './ModoCocina';
-import { ArrowLeft, Play, Edit, Trash2, Heart, Plus, Minus, Info, ClipboardList, ShoppingBag, Printer, Activity, Loader2 } from 'lucide-react';
-import { db, app } from '../firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { ArrowLeft, Play, Edit, Trash2, Heart, Plus, Minus, Info, ClipboardList, ShoppingBag, Printer } from 'lucide-react';
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -31,8 +28,6 @@ export const RecipeDetail: React.FC<RecipeDetailProps> = ({
 }) => {
   const [currentServings, setCurrentServings] = useState<number>(recipe.servings || 4);
   const [modoCocinaActive, setModoCocinaActive] = useState(false);
-  const [isCalculatingNutrition, setIsCalculatingNutrition] = useState(false);
-  const [nutritionError, setNutritionError] = useState('');
 
   const defaultServings = recipe.servings || 1;
   const scaleFactor = currentServings / defaultServings;
@@ -48,43 +43,6 @@ export const RecipeDetail: React.FC<RecipeDetailProps> = ({
     setTimeout(() => {
       document.title = originalTitle;
     }, 100);
-  };
-
-  const calculateNutrition = async () => {
-    if (!recipe.ingredients || recipe.ingredients.length === 0) return;
-    setIsCalculatingNutrition(true);
-    setNutritionError('');
-
-    try {
-      const functions = getFunctions(app);
-      const calculateNutritionEdamam = httpsCallable(functions, 'calculateNutritionEdamam');
-      
-      const ingredientsList = recipe.ingredients.map(i => `${i.quantity} ${i.unit} ${i.name}`);
-      
-      const result = await calculateNutritionEdamam({ 
-        ingredients: ingredientsList,
-        title: recipe.name
-      }) as any;
-
-      const nutritionalInfo = {
-        calories: result.data.calories || 0,
-        protein: result.data.protein || 0,
-        carbs: result.data.carbs || 0,
-        fat: result.data.fat || 0
-      };
-
-      // Guardar en Firestore
-      const recipeRef = doc(db, 'recetas', recipe.id);
-      await updateDoc(recipeRef, { nutritionalInfo });
-      
-      recipe.nutritionalInfo = nutritionalInfo; 
-
-    } catch (err: any) {
-      console.error(err);
-      setNutritionError(err.message || 'Error al calcular nutrición.');
-    } finally {
-      setIsCalculatingNutrition(false);
-    }
   };
 
   // Lógica de redondeo y formato de cantidades
@@ -215,50 +173,6 @@ export const RecipeDetail: React.FC<RecipeDetailProps> = ({
             <span>"{recipe.suggestion}"</span>
           </div>
         )}
-
-        {/* Información Nutricional (IA) */}
-        <div className="bg-bg-input-half/50 border border-border-app p-6 rounded-2xl print:bg-white print:border-black/20">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-text-primary flex items-center gap-2 print:text-black">
-              <Activity className="w-5 h-5 text-purple-accent" />
-              Información Nutricional (Total Receta)
-            </h2>
-            {!recipe.nutritionalInfo && (
-              <button
-                onClick={calculateNutrition}
-                disabled={isCalculatingNutrition}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-accent text-white text-xs font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition disabled:opacity-50 cursor-pointer print:hidden"
-              >
-                {isCalculatingNutrition ? <Loader2 className="w-4 h-4 animate-spin" /> : '✨ Calcular con IA'}
-              </button>
-            )}
-          </div>
-          
-          {nutritionError && <p className="text-xs text-rose-accent mb-3">{nutritionError}</p>}
-          
-          {recipe.nutritionalInfo ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-bg-input border border-border-app p-3 rounded-xl text-center print:border-black/20">
-                <p className="text-[10px] uppercase tracking-widest text-text-secondary font-bold mb-1">Calorías</p>
-                <p className="text-2xl font-black text-text-primary print:text-black">{Math.round((recipe.nutritionalInfo.calories || 0) * scaleFactor)} <span className="text-xs font-normal text-text-secondary">kcal</span></p>
-              </div>
-              <div className="bg-bg-input border border-border-app p-3 rounded-xl text-center print:border-black/20">
-                <p className="text-[10px] uppercase tracking-widest text-text-secondary font-bold mb-1">Proteínas</p>
-                <p className="text-2xl font-black text-text-primary print:text-black">{Math.round((recipe.nutritionalInfo.protein || 0) * scaleFactor)} <span className="text-xs font-normal text-text-secondary">g</span></p>
-              </div>
-              <div className="bg-bg-input border border-border-app p-3 rounded-xl text-center print:border-black/20">
-                <p className="text-[10px] uppercase tracking-widest text-text-secondary font-bold mb-1">Carbohidratos</p>
-                <p className="text-2xl font-black text-text-primary print:text-black">{Math.round((recipe.nutritionalInfo.carbs || 0) * scaleFactor)} <span className="text-xs font-normal text-text-secondary">g</span></p>
-              </div>
-              <div className="bg-bg-input border border-border-app p-3 rounded-xl text-center print:border-black/20">
-                <p className="text-[10px] uppercase tracking-widest text-text-secondary font-bold mb-1">Grasas</p>
-                <p className="text-2xl font-black text-text-primary print:text-black">{Math.round((recipe.nutritionalInfo.fat || 0) * scaleFactor)} <span className="text-xs font-normal text-text-secondary">g</span></p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-text-secondary print:hidden">Haz clic en el botón para calcular automáticamente los valores nutricionales con Edamam.</p>
-          )}
-        </div>
 
         {/* Dos columnas: Ingredientes (Reescalables) y Preparación */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-4 print:block">
