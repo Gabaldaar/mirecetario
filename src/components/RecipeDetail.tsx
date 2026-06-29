@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import type { Recipe } from '../types';
 import { ModoCocina } from './ModoCocina';
 import { ArrowLeft, Play, Edit, Trash2, Heart, Plus, Minus, Info, ClipboardList, ShoppingBag, Printer, Activity, Loader2 } from 'lucide-react';
-import { getGenerativeModel } from 'firebase/ai';
-import { ai, db } from '../firebase/config';
+import { db, app } from '../firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -56,46 +56,27 @@ export const RecipeDetail: React.FC<RecipeDetailProps> = ({
     setNutritionError('');
 
     try {
-      const model = getGenerativeModel(ai, { 
-        model: "gemini-2.5-flash",
-        generationConfig: {
-          responseMimeType: "application/json",
-        }
-      });
+      const functions = getFunctions(app);
+      const calculateNutritionEdamam = httpsCallable(functions, 'calculateNutritionEdamam');
       
-      const ingredientsText = recipe.ingredients.map(i => `${i.quantity} ${i.unit} de ${i.name}`).join(', ');
+      const ingredientsList = recipe.ingredients.map(i => `${i.quantity} ${i.unit} ${i.name}`);
       
-      const prompt = `
-      Eres un nutricionista experto. Analiza la siguiente lista de ingredientes para una receta de ${recipe.servings} porciones.
-      Calcula la información nutricional TOTAL APROXIMADA de la receta completa (suma de todos los ingredientes).
-      Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura (usa números enteros para los valores):
-      {
-        "calories": calorias_totales,
-        "protein": gramos_proteina_totales,
-        "carbs": gramos_carbohidratos_totales,
-        "fat": gramos_grasa_totales
-      }
-      
-      Ingredientes:
-      ${ingredientsText}
-      `;
-
-      const aiResult = await model.generateContent(prompt);
-      const responseText = aiResult.response.text();
-      const parsed = JSON.parse(responseText);
+      const result = await calculateNutritionEdamam({ 
+        ingredients: ingredientsList,
+        title: recipe.name
+      }) as any;
 
       const nutritionalInfo = {
-        calories: parsed.calories || 0,
-        protein: parsed.protein || 0,
-        carbs: parsed.carbs || 0,
-        fat: parsed.fat || 0
+        calories: result.data.calories || 0,
+        protein: result.data.protein || 0,
+        carbs: result.data.carbs || 0,
+        fat: result.data.fat || 0
       };
 
       // Guardar en Firestore
       const recipeRef = doc(db, 'recetas', recipe.id);
       await updateDoc(recipeRef, { nutritionalInfo });
       
-      // Actualizar el estado local (asumiendo que recipe es prop inmutable, el componente padre debería refrescarse, pero aquí forzamos la actualización visual mutando o avisando si fuera necesario. Como Firebase real-time usualmente lo maneja, solo esperamos).
       recipe.nutritionalInfo = nutritionalInfo; 
 
     } catch (err: any) {
@@ -275,7 +256,7 @@ export const RecipeDetail: React.FC<RecipeDetailProps> = ({
               </div>
             </div>
           ) : (
-            <p className="text-xs text-text-secondary print:hidden">Haz clic en el botón para calcular automáticamente los valores nutricionales basados en los ingredientes.</p>
+            <p className="text-xs text-text-secondary print:hidden">Haz clic en el botón para calcular automáticamente los valores nutricionales con Edamam.</p>
           )}
         </div>
 

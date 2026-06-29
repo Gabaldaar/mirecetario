@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Recipe, Ingredient, Note, MasterIngredient } from '../types';
 import { Trash2, Save, X, PlusCircle, Wand2, Loader2 } from 'lucide-react';
-import { db, app, ai } from '../firebase/config';
+import { db, app } from '../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getGenerativeModel } from 'firebase/ai';
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -303,50 +302,55 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
       
       // 1. Obtener HTML
       const result = await fetchUrlContent({ url: importUrl }) as any;
-      const htmlText = result.data?.text;
+      const recipeData = result.data?.recipeData;
       
-      if (!htmlText) throw new Error("No se pudo obtener el contenido de la URL.");
-
-      // 2. Procesar con Gemini
-      const model = getGenerativeModel(ai, { 
-        model: "gemini-2.5-flash",
-        generationConfig: {
-          responseMimeType: "application/json",
-        }
-      });
-      
-      const prompt = `
-      Eres un experto culinario. Analiza el siguiente texto extraído de una página web y extrae los datos de la receta.
-      Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura:
-      {
-        "name": "Nombre de la receta",
-        "preparation": "Instrucciones paso a paso en formato de texto. Usa saltos de línea para cada paso.",
-        "servings": número de porciones (entero, por defecto 4),
-        "ingredients": [
-          { "name": "nombre", "quantity": número, "unit": "Gramos|Unidades|Cucharadas|Tazas|Litros|Al gusto|etc", "observation": "picado, rallado, etc (opcional)" }
-        ]
-      }
-      
-      Texto de la página:
-      ${htmlText.substring(0, 30000)}
-      `;
-
-      const aiResult = await model.generateContent(prompt);
-      const responseText = aiResult.response.text();
-      const parsed = JSON.parse(responseText);
+      if (!recipeData) throw new Error("No se encontraron metadatos de receta en la URL.");
 
       // Autocompletar el formulario
-      if (parsed.name) setName(parsed.name);
-      if (parsed.preparation) setPreparation(parsed.preparation);
-      if (parsed.servings) setServings(parsed.servings);
-      if (parsed.ingredients && Array.isArray(parsed.ingredients)) {
-        setIngredients(parsed.ingredients.map((ing: any) => ({
-          name: ing.name || '',
-          quantity: ing.quantity || 0,
-          unit: ing.unit || 'Al gusto',
-          observation: ing.observation || '',
-          category: 'Varios'
-        })));
+      if (recipeData.name) setName(recipeData.name);
+      
+      // Intentar parsear las porciones
+      if (recipeData.recipeYield) {
+        let servingsMatch = String(recipeData.recipeYield).match(/\d+/);
+        if (servingsMatch) setServings(parseInt(servingsMatch[0]));
+      }
+
+      // Parsear preparación
+      if (recipeData.recipeInstructions) {
+        let prepText = '';
+        if (Array.isArray(recipeData.recipeInstructions)) {
+          prepText = recipeData.recipeInstructions.map((step: any, index: number) => {
+            return `${index + 1}. ${step.text || step}`;
+          }).join('\n\n');
+        } else if (typeof recipeData.recipeInstructions === 'string') {
+          prepText = recipeData.recipeInstructions;
+        }
+        if (prepText) setPreparation(prepText);
+      }
+
+      // Parsear ingredientes
+      if (recipeData.recipeIngredient && Array.isArray(recipeData.recipeIngredient)) {
+        setIngredients(recipeData.recipeIngredient.map((ingStr: string) => {
+          // Intento básico de parsear un string "2 tazas de harina" (sin IA)
+          let qty = 1;
+          let unit = 'Al gusto';
+          let name = ingStr;
+
+          const match = ingStr.match(/^([\d.,\/]+)\s*(taza|cucharada|cucharadita|g|kg|ml|l|unidad|pizca|diente)s?\s*(?:de\s*)?(.*)/i);
+          if (match) {
+            qty = parseFloat(match[1].replace(',', '.'));
+            unit = match[2];
+            name = match[3] || ingStr;
+          }
+
+          return {
+            name: name.trim().substring(0, 50),
+            quantity: isNaN(qty) ? 1 : qty,
+            unit: unit,
+            observation: '',
+            category: 'Varios'
+          };
+        }));
       }
       
       setImportUrl('');

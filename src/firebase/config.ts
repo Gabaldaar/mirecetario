@@ -6,7 +6,6 @@ import {
 } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, EmailAuthProvider } from 'firebase/auth';
 import { getAnalytics, isSupported } from 'firebase/analytics';
-import { getAI, GoogleAIBackend } from 'firebase/ai';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDE2hNl8tME4MrJR2jzjPXEaklUQ_shCQ8",
@@ -43,8 +42,5 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 const emailProvider = new EmailAuthProvider();
 
-// Inicializar AI Logic
-const ai = getAI(app, { backend: new GoogleAIBackend() });
-
-export { app, db, auth, googleProvider, emailProvider, analytics, ai };
+export { app, db, auth, googleProvider, emailProvider, analytics };
 export default app;

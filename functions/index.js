@@ -2,6 +2,7 @@ const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https")
 const admin = require("firebase-admin");
 const { getFirestore } = require("firebase-admin/firestore");
 const express = require("express");
+const cheerio = require("cheerio");
 
 // Inicialización de Firebase
 admin.initializeApp();
@@ -22,11 +23,92 @@ exports.fetchUrlContent = onCall(async (request) => {
     if (!response.ok) {
         throw new HttpsError("internal", `HTTP Error: ${response.status}`);
     }
-    const text = await response.text();
-    // Devolvemos el HTML en bruto, el frontend (Gemini) se encargará de extraer la info
-    return { text };
+    const htmlText = await response.text();
+    
+    // Parsear con cheerio
+    const $ = cheerio.load(htmlText);
+    let recipeData = null;
+
+    // Buscar JSON-LD
+    $('script[type="application/ld+json"]').each((i, elem) => {
+      try {
+        const textContent = $(elem).html();
+        if (textContent) {
+          let parsed = JSON.parse(textContent);
+          // JSON-LD puede ser un array o un objeto
+          if (Array.isArray(parsed)) {
+            const recipe = parsed.find(item => item['@type'] === 'Recipe');
+            if (recipe) recipeData = recipe;
+          } else if (parsed['@type'] === 'Recipe') {
+            recipeData = parsed;
+          } else if (parsed['@graph']) {
+            const recipe = parsed['@graph'].find(item => item['@type'] === 'Recipe');
+            if (recipe) recipeData = recipe;
+          }
+        }
+      } catch (e) {
+        // Ignorar parse errors
+      }
+    });
+
+    if (!recipeData) {
+      // Si no hay JSON-LD de Recipe, intentar extraer al menos el título
+      recipeData = {
+        name: $('title').text() || $('h1').first().text(),
+        description: $('meta[name="description"]').attr('content')
+      };
+    }
+
+    return { recipeData };
   } catch (error) {
     console.error("Error fetching URL:", error);
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+// Calcula la información nutricional usando Edamam API
+exports.calculateNutritionEdamam = onCall(async (request) => {
+  const ingredients = request.data.ingredients;
+  const title = request.data.title || "Recipe";
+  
+  if (!ingredients || !Array.isArray(ingredients)) {
+    throw new HttpsError("invalid-argument", "ingredients array is required");
+  }
+
+  // Claves de Edamam proporcionadas
+  const appId = "0efdde6f";
+  const appKey = "fb645e85ba50a4645113b5a29ffec3d1";
+  
+  const edamamUrl = `https://api.edamam.com/api/nutrition-details?app_id=${appId}&app_key=${appKey}`;
+
+  try {
+    const response = await fetch(edamamUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: title,
+        ingr: ingredients
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Edamam error:", errorText);
+      throw new HttpsError("internal", `Edamam API Error: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    return {
+      calories: Math.round(data.calories || 0),
+      protein: Math.round(data.totalNutrients?.PROCNT?.quantity || 0),
+      carbs: Math.round(data.totalNutrients?.CHOCDF?.quantity || 0),
+      fat: Math.round(data.totalNutrients?.FAT?.quantity || 0)
+    };
+  } catch (error) {
+    console.error("Error calculating nutrition:", error);
     throw new HttpsError("internal", error.message);
   }
 });
