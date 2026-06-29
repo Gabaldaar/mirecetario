@@ -3,6 +3,7 @@ const admin = require("firebase-admin");
 const { getFirestore } = require("firebase-admin/firestore");
 const express = require("express");
 const cheerio = require("cheerio");
+const translate = require("google-translate-api-x");
 
 // Inicialización de Firebase
 admin.initializeApp();
@@ -51,15 +52,22 @@ exports.fetchUrlContent = onCall(async (request) => {
       }
     });
 
-    if (!recipeData) {
-      // Si no hay JSON-LD de Recipe, intentar extraer al menos el título
-      recipeData = {
+    let cleanData = null;
+    if (recipeData) {
+      cleanData = {
+        name: recipeData.name || null,
+        recipeYield: recipeData.recipeYield || null,
+        recipeInstructions: recipeData.recipeInstructions || null,
+        recipeIngredient: recipeData.recipeIngredient || null,
+      };
+    } else {
+      cleanData = {
         name: $('title').text() || $('h1').first().text(),
-        description: $('meta[name="description"]').attr('content')
+        description: $('meta[name="description"]').attr('content') || null
       };
     }
 
-    return { recipeData };
+    return { recipeData: cleanData };
   } catch (error) {
     console.error("Error fetching URL:", error);
     throw new HttpsError("internal", error.message);
@@ -82,14 +90,27 @@ exports.calculateNutritionEdamam = onCall(async (request) => {
   const edamamUrl = `https://api.edamam.com/api/nutrition-details?app_id=${appId}&app_key=${appKey}`;
 
   try {
+    // Edamam no entiende español bien. Traducimos los ingredientes a inglés de forma gratuita.
+    let englishIngredients = [];
+    try {
+      const translation = await translate(ingredients, { to: 'en' });
+      // google-translate-api-x devuelve un array de objetos o un objeto si es un solo string
+      englishIngredients = Array.isArray(translation) 
+        ? translation.map(t => t.text) 
+        : [translation.text];
+    } catch (transErr) {
+      console.warn("Translation failed, using original ingredients", transErr);
+      englishIngredients = ingredients; // fallback
+    }
+
     const response = await fetch(edamamUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        title: title,
-        ingr: ingredients
+        title: "Recipe",
+        ingr: englishIngredients
       })
     });
 
