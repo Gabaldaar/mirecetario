@@ -69,4 +69,5 @@ export interface AppUser {
   displayName: string | null;
   photoURL: string | null;
   lastLoginAt: string;
+  openedRecipesCount?: number;
 }

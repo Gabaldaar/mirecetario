@@ -8,7 +8,9 @@ import {
   doc, 
   query, 
   where,
-  orderBy 
+  orderBy,
+  updateDoc,
+  increment
 } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import type { Recipe, Favorite, MasterIngredient, MenuItem, CollaborativeMenu, Ingredient } from './types';
@@ -479,6 +481,20 @@ function App() {
     );
   };
 
+  // Abrir receta y registrar en métricas
+  const handleOpenRecipe = async (recipe: Recipe) => {
+    setCurrentRecipe(recipe);
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          openedRecipesCount: increment(1)
+        });
+      } catch (error) {
+        console.error("Error al actualizar contador de recetas abiertas:", error);
+      }
+    }
+  };
+
   // Filtrado local de recetas en el explorador
   const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -872,7 +888,7 @@ function App() {
                         recipe={recipe}
                         isFavorite={favorites.some(fav => fav.recipeId === recipe.id)}
                         onToggleFavorite={(id, name, ev) => handleToggleFavorite(id, name, ev)}
-                        onClick={() => setCurrentRecipe(recipe)}
+                        onClick={() => handleOpenRecipe(recipe)}
                         onAddToMenu={handleAddRecipeToMenu}
                       />
                     ))}
@@ -884,7 +900,7 @@ function App() {
             {activeTab === 'pantry' && (
               <PantrySearch 
                 recipes={recipes}
-                onRecipeClick={(recipe) => setCurrentRecipe(recipe)}
+                onRecipeClick={(recipe) => handleOpenRecipe(recipe)}
               />
             )}
 
@@ -911,7 +927,7 @@ function App() {
                           recipe={recipe}
                           isFavorite={true}
                           onToggleFavorite={(id, name, ev) => handleToggleFavorite(id, name, ev)}
-                          onClick={() => setCurrentRecipe(recipe)}
+                          onClick={() => handleOpenRecipe(recipe)}
                           onAddToMenu={handleAddRecipeToMenu}
                         />
                       ))}
@@ -929,7 +945,7 @@ function App() {
                 recipes={recipes}
                 masterIngredients={masterIngredients}
                 onUpdateMenu={updateCollaborativeMenu}
-                onRecipeClick={(recipe) => setCurrentRecipe(recipe)}
+                onRecipeClick={(recipe) => handleOpenRecipe(recipe)}
                 showAlert={handleShowAlert}
                 showConfirm={handleShowConfirm}
                 showToast={(msg) => setToastMessage(msg)}
@@ -937,7 +953,7 @@ function App() {
             )}
 
             {activeTab === 'admin' && currentUser.email === 'gab.aldazabal@gmail.com' && (
-              <AdminPanel />
+              <AdminPanel recipes={recipes} />
             )}
 
           </div>
