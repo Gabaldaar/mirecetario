@@ -21,6 +21,7 @@ import { EquivalenciasModal } from './components/EquivalenciasModal';
 import { MenuPlanner } from './components/MenuPlanner';
 import { IngredientsManagerModal } from './components/IngredientsManagerModal';
 import { GuiaUso } from './components/GuiaUso';
+import { AdminPanel } from './components/AdminPanel';
 import { 
   ChefHat, 
   Search, 
@@ -38,7 +39,8 @@ import {
   ShoppingBag,
   Mic,
   HelpCircle,
-  Share2
+  Share2,
+  ShieldCheck
 } from 'lucide-react';
 
 function App() {
@@ -52,7 +54,7 @@ function App() {
   const [recipesLoading, setRecipesLoading] = useState(true);
 
   // Estado de Navegación y Búsqueda
-  const [activeTab, setActiveTab] = useState<'explore' | 'pantry' | 'favorites' | 'menu'>('explore');
+  const [activeTab, setActiveTab] = useState<'explore' | 'pantry' | 'favorites' | 'menu' | 'admin'>('explore');
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -160,13 +162,26 @@ function App() {
 
   // Monitorizar cambios en la autenticación del usuario
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const isRegistering = sessionStorage.getItem('is_registering') === 'true';
         if (isRegistering) {
           // Bypasar la redirección inmediata para dar tiempo a la asignación de displayName
           return;
         }
+        
+        // Guardar/Actualizar documento de usuario en Firestore
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            lastLoginAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (error) {
+          console.error("Error guardando datos de usuario:", error);
+        }
+
         setCurrentUser(user);
       } else {
         setCurrentUser(null);
@@ -921,6 +936,10 @@ function App() {
               />
             )}
 
+            {activeTab === 'admin' && currentUser.email === 'gab.aldazabal@gmail.com' && (
+              <AdminPanel />
+            )}
+
           </div>
         )}
       </main>
@@ -964,6 +983,15 @@ function App() {
               </div>
               <span className="text-[10px] font-bold">Lista</span>
             </button>
+            {currentUser.email === 'gab.aldazabal@gmail.com' && (
+              <button
+                onClick={() => { setActiveTab('admin'); setShowMobileFabMenu(false); }}
+                className={`flex flex-col items-center justify-center w-1/5 p-2 transition-colors ${activeTab === 'admin' ? 'text-teal-accent' : 'text-text-secondary hover:text-text-primary'}`}
+              >
+                <ShieldCheck className="w-5 h-5 mb-1" />
+                <span className="text-[10px] font-bold">Admin</span>
+              </button>
+            )}
           </div>
 
           {/* FAB MÓVIL Y MENÚ RÁPIDO */}

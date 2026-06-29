@@ -15,6 +15,16 @@ service cloud.firestore {
       return isAuthenticated() && favoriteData.userId == request.auth.uid;
     }
 
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == "gab.aldazabal@gmail.com";
+    }
+
+    // Reglas para la colección de usuarios
+    match /users/{userId} {
+      allow read: if isAdmin() || request.auth.uid == userId;
+      allow write: if request.auth.uid == userId;
+    }
+
     // Reglas para la colección maestra de recetas
     match /recipes/{recipeId} {
       allow read: if true; // Cualquiera puede leer recetas compartidas
